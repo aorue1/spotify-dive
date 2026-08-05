@@ -1,0 +1,783 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPOTIFY DIVE</title>
+<style>
+:root{--bg:#000302;--pan:#010a05;--pan2:#02140a;--line:#0d3a1d;--txt:#9fe8b4;--mut:#3d7a52;
+--cy:#00ff41;--mg:#ff4444;--lm:#d7ffd7;--or:#ffb000;--vi:#41ffd9;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:12.5px/1.5 "SF Mono",Menlo,Consolas,"Courier New",monospace;
+background-image:radial-gradient(ellipse 90% 60% at 50% -15%,rgba(0,255,65,.06),transparent),
+radial-gradient(ellipse 70% 50% at 100% 110%,rgba(0,255,65,.04),transparent);}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+background:repeating-linear-gradient(0deg,rgba(0,255,65,.028) 0 1px,transparent 1px 3px);mix-blend-mode:screen;}
+header{padding:18px 26px 10px;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.logo{font-size:29px;font-weight:700;letter-spacing:6px;line-height:1;color:var(--cy);
+text-shadow:0 0 6px rgba(0,255,65,.8),0 0 26px rgba(0,255,65,.4);}
+.logo::before{content:"> "}
+.logo::after{content:"▮";margin-left:6px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.tag{color:var(--mut);font-size:11px;letter-spacing:2px;text-transform:lowercase}
+.tag b{color:var(--cy);font-weight:700}
+.fbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 26px;position:sticky;top:0;z-index:50;
+background:rgba(0,3,2,.95);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+input,select{background:#000;border:1px solid var(--line);color:var(--cy);
+padding:6px 10px;border-radius:3px;font:inherit;outline:none}
+input:focus,select:focus{border-color:var(--cy);box-shadow:0 0 8px rgba(0,255,65,.35)}
+#q{width:230px}
+input::placeholder{color:#2b5c3c}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;
+background:rgba(0,255,65,.1);border:1px solid var(--cy);color:var(--cy);
+box-shadow:0 0 8px rgba(0,255,65,.25)}
+.chip.mg{border-color:var(--mg);color:var(--mg);background:rgba(255,68,68,.08);box-shadow:0 0 8px rgba(255,68,68,.25)}
+.chip.lm{border-color:var(--lm);color:var(--lm);background:rgba(215,255,215,.07);box-shadow:0 0 8px rgba(215,255,215,.2)}
+.chip.or{border-color:var(--or);color:var(--or);background:rgba(255,176,0,.08)}
+.tabs{display:flex;gap:8px;padding:12px 26px 0;flex-wrap:wrap}
+.tab{padding:8px 18px;border-radius:3px;cursor:pointer;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+color:var(--mut);background:#000;border:1px solid var(--line)}
+.tab:hover{color:var(--cy);border-color:var(--cy)}
+.tab.on{color:#001505;background:var(--cy);border-color:var(--cy);
+box-shadow:0 0 18px rgba(0,255,65,.55)}
+.wrap{padding:16px 26px 60px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--pan);border:1px solid var(--line);border-radius:4px;padding:13px 16px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.kpi .n{font-size:22px;font-weight:700;letter-spacing:0;color:var(--cy);text-shadow:0 0 10px rgba(0,255,65,.6)}
+.kpi .l{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
+.grid{display:grid;gap:14px;margin-bottom:14px}
+.g2{grid-template-columns:1fr 1fr}.g31{grid-template-columns:2fr 1fr}.g13{grid-template-columns:1fr 2fr}
+@media(max-width:980px){.g2,.g31,.g13{grid-template-columns:1fr}}
+.card{background:var(--pan);border:1px solid var(--line);border-radius:4px;padding:14px 16px;min-width:0;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.card h3{margin:0 0 12px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:var(--cy);
+text-shadow:0 0 8px rgba(0,255,65,.5)}
+.card h3 .sub{color:var(--mut);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;font-size:11px}
+.brow{display:flex;align-items:center;gap:9px;margin:4px 0;cursor:pointer;border-radius:6px;padding:1px 4px}
+.brow:hover{background:rgba(0,255,65,.07)}
+.blab{width:160px;flex:0 0 160px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btrk{flex:1;background:#010603;border-radius:2px;height:16px;position:relative;overflow:hidden;border:1px solid #0d3a1d}
+.bfill{height:100%;border-radius:3px;background:linear-gradient(90deg,#0a4d20,var(--cy));box-shadow:0 0 8px rgba(0,255,65,.4)}
+.bfill.mg{background:linear-gradient(90deg,#5c1414,var(--mg));box-shadow:0 0 8px rgba(255,68,68,.4)}
+.bfill.lm{background:linear-gradient(90deg,#3f7a52,var(--lm));box-shadow:0 0 8px rgba(215,255,215,.3)}
+.bval{position:absolute;right:6px;top:0;line-height:15px;font-size:10px;font-weight:800;color:#fff;text-shadow:0 0 4px #000}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--mut);font-weight:800;padding:7px 8px;border-bottom:1px solid var(--line);
+font-size:10px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;position:sticky;top:0;background:var(--pan);z-index:2}
+td{padding:6px 8px;border-bottom:1px solid #06210f;vertical-align:middle}
+tr:hover td{background:rgba(0,255,65,.06)}
+.scroll{max-height:560px;overflow:auto;border-radius:3px}
+.mut{color:var(--mut)}.cyt{color:var(--cy)}.mgt{color:var(--mg)}.lmt{color:var(--lm)}
+.stag{display:inline-block;background:#01140a;border:1px solid #0d3a1d;border-radius:2px;padding:0 6px;font-size:10px;color:#6fbc8a;margin:1px;cursor:pointer}
+.stag:hover{border-color:var(--cy);color:var(--cy)}
+a.play{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;text-decoration:none;
+color:#001505;font-size:10px;font-weight:900;background:var(--cy);
+box-shadow:0 0 10px rgba(0,255,65,.55)}
+
+#tip{position:fixed;display:none;background:#010a05;border:1px solid var(--cy);border-radius:8px;padding:8px 11px;
+font-size:12px;pointer-events:none;z-index:100;box-shadow:0 0 16px rgba(0,255,65,.35);max-width:260px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.lgi{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#8fd8a8;cursor:pointer;padding:2px 8px;border-radius:10px;border:1px solid transparent}
+.lgi:hover{border-color:var(--cy);background:#01140a}
+.lgi i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.seg span{padding:5px 14px;cursor:pointer;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.5px}
+.seg span.on{background:var(--cy);color:#001505}
+.pbtn{padding:6px 14px;border-radius:3px;cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.5px;
+background:#000;border:1px solid var(--cy);color:var(--cy)}
+.pbtn:hover{background:var(--cy);color:#001505;box-shadow:0 0 12px rgba(0,255,65,.5)}
+.ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.ctl label{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.delta-up{color:var(--cy);font-weight:900}.delta-dn{color:var(--mg);font-weight:900}
+.note{color:var(--mut);font-size:11px;margin-top:8px;line-height:1.5}
+.tname{cursor:pointer;border-bottom:1px dotted #2f6b42;transition:.12s}
+.tname:hover{color:#eaffea;border-bottom-color:var(--cy);text-shadow:0 0 8px rgba(0,255,65,.6)}
+#peekRe{position:fixed;right:18px;bottom:18px;z-index:150;display:none;align-items:center;gap:8px;
+ max-width:340px;padding:9px 14px;border-radius:3px;cursor:pointer;font-size:12px;
+ background:#020c06;border:1px solid var(--cy);color:var(--cy);
+ box-shadow:0 0 18px rgba(0,255,65,.3)}
+#peekRe:hover{background:var(--cy);color:#001505}
+#peekRe b{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#peekRe kbd{border:1px solid currentColor;border-radius:2px;padding:0 4px;font-size:9px;opacity:.75}
+.pk-recent{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.pk-recent span{font-size:10.5px;padding:2px 8px;border:1px solid var(--line);border-radius:3px;
+ color:var(--mut);cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-recent span:hover{border-color:var(--cy);color:var(--cy)}
+.pk-recent span.cur{border-color:var(--cy);color:#eaffea}
+.dig-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-bottom:1px solid #06210f}
+.dig-row:hover{background:rgba(0,255,65,.06)}
+.dig-n{flex:1;min-width:0}
+.dig-n b{color:#eaffea}
+.dig-why{color:var(--mut);font-size:10.5px}
+.dig-sc{width:60px;text-align:right;color:var(--cy);font-size:11px;font-weight:700}
+.dig-go{flex:0 0 auto;padding:3px 9px;border:1px solid var(--line);border-radius:3px;font-size:10px;
+ color:var(--cy);text-decoration:none;cursor:pointer}
+.dig-go:hover{background:var(--cy);color:#001505}
+.tname::after{content:"⌕";font-size:10px;color:#2f6b42;margin-left:6px;vertical-align:1px}
+.tname:hover::after{color:var(--cy)}
+#peekBg{position:fixed;inset:0;background:rgba(0,3,2,.72);z-index:200;display:none;backdrop-filter:blur(3px)}
+#peek{position:fixed;top:0;right:0;width:min(560px,100%);height:100%;z-index:201;display:none;
+ background:#020c06;border-left:1px solid var(--cy);box-shadow:-14px 0 44px rgba(0,255,65,.18);
+ overflow-y:auto;padding:18px 20px 40px}
+#peek h2{margin:.2em 0 .1em;font-size:17px;color:#eaffea;letter-spacing:.5px}
+#peek .pa{color:var(--cy);font-size:13px;cursor:pointer}
+#peek .pclose{position:absolute;top:12px;right:16px;cursor:pointer;color:var(--mut);font-size:20px;line-height:1}
+#peek .pclose:hover{color:var(--cy)}
+.pk-top{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
+.pk-art{width:150px;height:150px;flex:0 0 150px;border:1px solid var(--line);border-radius:3px;object-fit:cover;
+ background:#03150a;box-shadow:0 0 18px rgba(0,255,65,.15)}
+.pk-meta{font-size:12px;line-height:1.75;min-width:0}
+.pk-meta b{color:var(--mut);font-weight:400;display:inline-block;min-width:74px}
+.pk-sec{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.pk-sec h4{margin:0 0 8px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cy)}
+.pk-stat{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.pk-stat div span{display:block;font-size:17px;font-weight:700;color:#eaffea}
+.pk-stat div small{color:var(--mut);font-size:9px;letter-spacing:1px;text-transform:uppercase}
+#pkLyr{white-space:pre-wrap;font-size:12px;line-height:1.65;color:#bfe8cc;max-height:340px;overflow:auto;
+ border:1px solid var(--line);border-radius:3px;padding:10px;background:#010a05}
+.pk-sib{display:flex;justify-content:space-between;gap:8px;padding:4px 6px;border-bottom:1px solid #06210f;font-size:12px;cursor:pointer}
+.pk-sib:hover{background:rgba(0,255,65,.07)}
+</style></head><body>
+<header>
+<div><div class="logo">SPOTIFY DIVE</div>
+<div class="tag"><b id="hdrHours"></b> hours of listening &nbsp;·&nbsp; 2013–2026</div></div>
+</header>
+<div class="fbar">
+<input id="q" placeholder="⌕ search track / artist / album…">
+<select id="selGenre"><option value="">genre…</option></select>
+<select id="selStyle"><option value="">subgenre…</option></select>
+<select id="selLabel"><option value="">label…</option></select>
+<select id="selArtist"><option value="">artist…</option></select>
+<select id="selCty"><option value="">country…</option></select>
+<select id="selY0"></select><span class="mut">→</span><select id="selY1"></select>
+<span id="chips"></span><span id="cntChip" class="chip or" style="margin-left:auto" title="open the rows in Explorer"></span>
+</div>
+<div class="tabs">
+<div class="tab on" data-t="overview">Overview</div>
+<div class="tab" data-t="trends">Trends</div>
+<div class="tab" data-t="world">World</div>
+<div class="tab" data-t="rediscover">Rediscover</div>
+<div class="tab" data-t="explorer">Explorer</div>
+<div class="tab" data-t="dig">Dig ▸</div>
+</div>
+<div class="wrap"><div id="view"></div></div>
+<div id="tip"></div>
+<div id="peekBg" onclick="closePeek()"></div>
+<div id="peek"></div>
+<div id="peekRe" onclick="reopenPeek()"><span>⌕</span><b id="peekReN"></b><kbd>P</kbd></div>
+<script>__D3__</script>
+<script>
+const D=__PAYLOAD__;
+const YRS=[];for(let y=2013;y<=2026;y++)YRS.push(String(y));
+const MN=['','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const PAL=['#00ff41','#ffb000','#41d9ff','#ff5252','#e8b3ff','#ffe93d','#ff8c3d','#4a9eff','#ff5ea8','#e8ffe8'];
+const S={tab:'overview',q:'',style:'',label:'',country:'',artist:'',y0:2013,y1:2026,
+ trMode:'s',trAbs:false,thenA:2018,thenB:2022,nowA:2025,nowB:2026,
+ rdMin:5,rdBefore:2024,rdPeak:'',rdSort:'score',matchSet:null,
+ sortT:'h',sortDir:-1,digMin:2,genre:''};
+const ALIAS={'uk':'GB','usa':'US','us':'US','russia':'RU','ussr':'RU','czech republic':'CZ','czechia':'CZ',
+'holland':'NL','south korea':'KR','korea':'KR','taiwan':'TW','vietnam':'VN','iran':'IR','syria':'SY',
+'venezuela':'VE','bolivia':'BO','tanzania':'TZ','moldova':'MD','macedonia':'MK','north macedonia':'MK',
+'yugoslavia':'RS','serbia':'RS','bosnia & herzegovina':'BA','trinidad & tobago':'TT','uae':'AE',
+'ivory coast':'CI','cape verde':'CV','democratic republic of the congo':'CD','republic of the congo':'CG',
+'laos':'LA','brunei':'BN','myanmar':'MM','burma':'MM','palestine':'PS','kosovo':'RS','scotland':'GB','england':'GB','wales':'GB'};
+const I2N={};for(const[n,i]of Object.entries(D.N2I)){if(!I2N[i])I2N[i]=n.replace(/\b\w/g,c=>c.toUpperCase());}
+const isoCache={};
+function isoOf(c){if(!c)return null;if(c in isoCache)return isoCache[c];
+ let s=c.split('&')[0].split(',')[0].trim().toLowerCase();
+ const r=D.N2I[s]||ALIAS[s]||null;isoCache[c]=r;return r;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function jsq(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function fmtH(h){return h>=10?Math.round(h)+' h':h>=1?h.toFixed(1)+' h':Math.round(h*60)+' min';}
+const metaOf=a=>D.META[a]||null;
+function labelOf(t){return t.lb||((metaOf(t.a)||{}).l||[])[0]||null;}
+function aStyles(a){const m=metaOf(a);return (m&&m.s)||[];}
+function aGenres(a){const m=metaOf(a);return (m&&m.g)||[];}
+// genre lives on the RELEASE; fall back to the artist profile only when the
+// release hasn't been resolved yet. Both return LISTS - many-to-many by design.
+function tStyles(t){return (t.rs&&t.rs.length)?t.rs:aStyles(t.a);}
+function tGenres(t){return (t.rg&&t.rg.length)?t.rg:aGenres(t.a);}
+// union across an artist's tracks, for artist-level views
+const _agS={},_agG={};
+function stylesOf(a){if(_agS[a])return _agS[a];const c={};
+ D.T.forEach(t=>{if(t.a===a)tStyles(t).forEach(x=>c[x]=(c[x]||0)+t.h);});
+ return _agS[a]=Object.entries(c).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);}
+function genresOf(a){if(_agG[a])return _agG[a];const c={};
+ D.T.forEach(t=>{if(t.a===a)tGenres(t).forEach(x=>c[x]=(c[x]||0)+t.h);});
+ return _agG[a]=Object.entries(c).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);}
+function artistPass(a,skip){const m=metaOf(a);
+ if(S.label&&skip!=='l'){if(!m||!(m.l||[]).includes(S.label))return false;}
+ if(S.country&&skip!=='c'){if(!m||isoOf(m.c)!==S.country)return false;}
+ return true;}
+function trackPass(t){
+ if(S.artist&&t.a!==S.artist)return false;
+ if(S.genre&&!tGenres(t).includes(S.genre))return false;
+ if(S.style&&!tStyles(t).includes(S.style))return false;
+ if(!artistPass(t.a,'l'))return false;
+ if(S.label&&labelOf(t)!==S.label)return false;
+ if(S.matchSet){const st=stylesOf(t.a);if(!st.some(x=>S.matchSet.has(x)))return false;}
+ let wp=0;for(const[y,p]of Object.entries(t.y))if(+y>=S.y0&&+y<=S.y1)wp+=p;
+ if(!wp)return false;
+ if(S.q){const s=(t.n+' '+t.a+' '+t.al).toLowerCase();if(!s.includes(S.q))return false;}
+ return true;}
+function winPlays(t){let wp=0;for(const[y,p]of Object.entries(t.y))if(+y>=S.y0&&+y<=S.y1)wp+=p;return wp;}
+function winHours(t){return t.h*winPlays(t)/t.p;}
+function artistWinH(a){const info=D.A[a];if(!info)return 0;let h=0;
+ for(const[y,v]of Object.entries(info.y))if(+y>=S.y0&&+y<=S.y1)h+=v;return h;}
+function filteredTracks(){return D.T.filter(trackPass);}
+// ---------- charts ----------
+const IC={zoom:1,sl:-1,baseW:900};
+function areaChart(labels,vals,h){
+ const n=vals.length;if(!n)return '';
+ const W=Math.round(IC.baseW*IC.zoom);
+ const L=38,R=14,T=16,B=30;
+ const max=Math.max(1,...vals);
+ const px=i=>L+(n===1?(W-L-R)/2:i/(n-1)*(W-L-R));
+ const py=v=>h-B-v/max*(h-T-B);
+ const pts=vals.map((v,i)=>px(i).toFixed(1)+','+py(v).toFixed(1)).join(' ');
+ const ma=vals.map((_,i)=>{let s=0,c=0;for(let j=i-3;j<=i+3;j++)if(j>=0&&j<n){s+=vals[j];c++;}return s/c;});
+ const mpts=ma.map((v,i)=>px(i).toFixed(1)+','+py(v).toFixed(1)).join(' ');
+ const step=Math.max(1,Math.ceil(n/Math.max(1,(W-L-R)/74)));
+ let ax='';for(let i=0;i<n;i+=step)ax+=`<text x="${px(i).toFixed(1)}" y="${h-10}" fill="#3d7a52" font-size="9.5" letter-spacing=".5" text-anchor="middle">${labels[i]}</text>`;
+ let sep='';
+ for(let i=1;i<n;i++)if(labels[i].slice(-2)!==labels[i-1].slice(-2)){
+  const x=((px(i)+px(i-1))/2).toFixed(1);
+  sep+=`<line x1="${x}" y1="${T-8}" x2="${x}" y2="${h-B+4}" stroke="#0d3a1d" stroke-width="1" stroke-dasharray="2 3"/>`;}
+ const gy=[.25,.5,.75,1].map(f=>`<line x1="${L}" y1="${py(max*f).toFixed(1)}" x2="${W-R}" y2="${py(max*f).toFixed(1)}" stroke="#0d3a1d" stroke-width=".5" opacity=".6"/><text x="4" y="${(py(max*f)+3).toFixed(1)}" fill="#2f5c3d" font-size="8.5">${Math.round(max*f)}h</text>`).join('');
+ const bw=(W-L-R)/Math.max(1,n-1);
+ let hov='';for(let i=0;i<n;i++)hov+=`<rect class="icHit" x="${(px(i)-bw/2).toFixed(1)}" y="${T-10}" width="${bw.toFixed(1)}" height="${(h-T-B+14).toFixed(1)}" fill="transparent" data-l="${labels[i]}" data-v="${vals[i].toFixed(1)}" data-x="${px(i).toFixed(1)}"/>`;
+ return `<div id="icWrap" style="overflow-x:auto;overflow-y:hidden;cursor:crosshair">
+ <svg width="${W}" height="${h}" viewBox="0 0 ${W} ${h}" style="display:block">
+ <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+ <stop offset="0" stop-color="#00ff41" stop-opacity=".5"/><stop offset="1" stop-color="#00ff41" stop-opacity=".02"/></linearGradient></defs>
+ ${gy}${sep}
+ <polygon points="${L},${h-B} ${pts} ${(W-R)},${h-B}" fill="url(#ag)"/>
+ <polyline points="${pts}" fill="none" stroke="#00ff41" stroke-width="1.2" opacity=".8"/>
+ <polyline points="${mpts}" fill="none" stroke="#ffb000" stroke-width="2.2" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(255,176,0,.7))"/>
+ <line id="icCur" x1="0" y1="${T-10}" x2="0" y2="${h-B}" stroke="#e8ffe8" stroke-width="1" opacity="0"/>
+ ${ax}${hov}</svg></div>
+ <div class="note" style="display:flex;gap:12px;align-items:center;margin-top:6px">
+ <span>scroll to pan · <b style="color:var(--cy)">⌥/ctrl + wheel</b> or ± to zoom</span>
+ <span class="seg"><span onclick="icZoom(-1)">–</span><span onclick="icZoom(1)">+</span><span onclick="icZoom(0)">RESET</span></span></div>`;}
+window.icZoom=d=>{const w=document.getElementById('icWrap');const c=w?(w.scrollLeft+w.clientWidth/2)/Math.max(1,w.scrollWidth):.5;
+ IC.zoom=d===0?1:Math.max(1,Math.min(14,IC.zoom*(d>0?1.5:1/1.5)));IC.sl=c;render();};
+function icWire(){const w=document.getElementById('icWrap');if(!w)return;
+ const cw=w.clientWidth;if(cw>200&&Math.abs(cw-IC.baseW)>16){IC.baseW=cw;render();return;}
+ if(!IC.rz){IC.rz=1;addEventListener('resize',()=>{if(S.tab==='overview'){const e=document.getElementById('icWrap');if(e&&Math.abs(e.clientWidth-IC.baseW)>16){IC.baseW=e.clientWidth;render();}}});}
+ if(IC.sl>=0)w.scrollLeft=IC.sl*w.scrollWidth-w.clientWidth/2;
+ IC.sl=-1;
+ w.onwheel=e=>{if(e.ctrlKey||e.metaKey||e.altKey){e.preventDefault();
+   const c=(w.scrollLeft+e.offsetX)/Math.max(1,w.scrollWidth);
+   IC.zoom=Math.max(1,Math.min(14,IC.zoom*(e.deltaY<0?1.18:1/1.18)));IC.sl=c;render();}};
+ const tip=document.getElementById('tip'),cur=w.querySelector('#icCur');
+ w.querySelectorAll('.icHit').forEach(r=>{
+  r.onmouseenter=e=>{cur.setAttribute('x1',r.dataset.x);cur.setAttribute('x2',r.dataset.x);cur.setAttribute('opacity','.45');
+   tip.style.display='block';tip.innerHTML=`<b>${r.dataset.l}</b><br>${r.dataset.v} h`;};
+  r.onmousemove=e=>{tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+10)+'px';};});
+ w.onmouseleave=()=>{tip.style.display='none';cur.setAttribute('opacity','0');};}
+function stackedArea(mat){
+ const yrs=YRS.filter(y=>+y>=S.y0&&+y<=S.y1);if(yrs.length<2)return'<div class="mut">widen the era range</div>';
+ const tot={},keys=Object.entries(mat).map(([k,r])=>[k,yrs.reduce((s,y)=>s+(r[y]||0),0)]).sort((a,b)=>b[1]-a[1]);
+ const top=keys.slice(0,9).map(k=>k[0]);
+ const rows=top.map(k=>({k,v:yrs.map(y=>mat[k][y]||0)}));
+ const other=yrs.map((y,i)=>keys.slice(9).reduce((s,[k])=>s+(mat[k][y]||0),0));
+ if(keys.length>9)rows.push({k:'Other',v:other});
+ yrs.forEach((y,i)=>tot[i]=rows.reduce((s,r)=>s+r.v[i],0));
+ const W=940,H=290,px=i=>i/(yrs.length-1)*(W-60)+34,py=v=>H-26-v*(H-50);
+ let cum=yrs.map(()=>0),svg='',lg='';
+ rows.forEach((r,ri)=>{const col=r.k==='Other'?'#123021':PAL[ri%PAL.length];
+  const lo=cum.slice();cum=cum.map((c,i)=>c+(S.trAbs?r.v[i]/Math.max(1,Math.max(...yrs.map((_,j)=>tot[j]))):(tot[i]?r.v[i]/tot[i]:0)));
+  let up=cum.map((c,i)=>px(i)+','+py(c)).join(' ');
+  let dn=lo.map((c,i)=>px(i)+','+py(c)).reverse().join(' ');
+  svg+=`<polygon points="${up} ${dn}" fill="${col}" fill-opacity=".78" stroke="#05070c" stroke-width=".5"><title>${esc(r.k)}</title></polygon>`;
+  lg+=`<span class="lgi" onclick="clickTrendKey('${jsq(r.k)}')"><i style="background:${col}"></i>${esc(r.k)}</span>`;});
+ let ax=yrs.map((y,i)=>`<text x="${px(i)}" y="${H-8}" fill="#2f5c3d" font-size="10" text-anchor="middle">${y.slice(2)}</text>`).join('');
+ let yax=S.trAbs?'':'<text x="6" y="18" fill="#2f5c3d" font-size="9">100%</text><text x="12" y="'+(H-28)+'" fill="#2f5c3d" font-size="9">0</text>';
+ return `<svg viewBox="0 0 ${W} ${H}" style="width:100%">${svg}${ax}${yax}</svg><div class="legend">${lg}</div>`;}
+function sparkYears(ty){const W=76,H=16,bw=W/YRS.length;
+ const max=Math.max(1,...YRS.map(y=>ty[y]||0));
+ let b=YRS.map((y,i)=>{const v=ty[y]||0;if(!v)return'';const bh=Math.max(1.5,v/max*H);
+  return `<rect x="${i*bw+.5}" y="${H-bh}" width="${bw-1}" height="${bh}" fill="${+y>=2024?'#00ff41':'#136332'}"/>`;}).join('');
+ return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${b}</svg>`;}
+function barList(items,cls,click){const max=Math.max(1e-9,...items.map(i=>i.v));
+ return items.map(i=>`<div class="brow" onclick="${click}('${jsq(i.k)}')"><div class="blab" title="${esc(i.k)}">${esc(i.k)}</div>
+ <div class="btrk"><div class="bfill ${cls}" style="width:${i.v/max*100}%"></div><div class="bval">${i.fmt||fmtH(i.v)}</div></div></div>`).join('');}
+// ---------- aggregations ----------
+function matFor(kind){const m={};
+ if(kind==='g'||kind==='s'){
+  for(const t of D.T){
+   if(S.artist&&t.a!==S.artist)continue;
+   if(!artistPass(t.a))continue;
+   if(S.label&&labelOf(t)!==S.label)continue;
+   const other=kind==='g'?S.style:S.genre;
+   if(other&&!(kind==='g'?tStyles(t):tGenres(t)).includes(other))continue;
+   const keys=kind==='g'?tGenres(t):tStyles(t);if(!keys.length)continue;
+   for(const k of keys){const row=m[k]??={};
+    for(const[y,p]of Object.entries(t.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+t.h*p/t.p/keys.length;}}}
+  return m;}
+ if(kind==='l'){
+  for(const t of D.T){
+   if(S.artist&&t.a!==S.artist)continue;
+   if(!artistPass(t.a,'l'))continue;
+   const k=labelOf(t);if(!k)continue;
+   const row=m[k]??={};
+   for(const[y,p]of Object.entries(t.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+t.h*p/t.p;}}
+  return m;}
+ for(const[a,info]of Object.entries(D.A)){
+  if(S.artist&&a!==S.artist)continue;
+  const me=metaOf(a);if(!me)continue;
+  if(!artistPass(a,kind))continue;
+  let keys=kind==='c'?[me.c?(I2N[isoOf(me.c)]||me.c.split('&')[0].split(',')[0].trim()):null].filter(Boolean):
+   kind==='g'?genresOf(a):kind==='s'?stylesOf(a):(me.l||[]);
+  if(!keys.length)continue;
+  for(const k of keys){const row=m[k]??={};
+   for(const[y,h]of Object.entries(info.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+h/keys.length;}}}
+ return m;}
+function topStylesFor(years){const c={};
+ for(const t of D.T){const st=tStyles(t);if(!st.length)continue;
+  let p=0;for(const y of years)p+=t.y[y]||0;if(!p)continue;
+  const h=t.h*p/t.p;
+  for(const s of st)c[s]=(c[s]||0)+h/st.length;}
+ return Object.entries(c).sort((a,b)=>b[1]-a[1]);}
+// ---------- render ----------
+function setTab(t){S.tab=t;document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.t===t));render();}
+document.querySelectorAll('.tab').forEach(e=>e.onclick=()=>setTab(e.dataset.t));
+function chips(){let h='';
+ if(S.genre)h+=`<span class="chip" onclick="S.genre='';sync()">▣ ${esc(S.genre)} ✕</span>`;
+ if(S.style)h+=`<span class="chip" onclick="S.style='';sync()">◆ ${esc(S.style)} ✕</span>`;
+ if(S.label)h+=`<span class="chip mg" onclick="S.label='';sync()">⬢ ${esc(S.label)} ✕</span>`;
+ if(S.country)h+=`<span class="chip lm" onclick="S.country='';sync()">🌐 ${esc(I2N[S.country]||S.country)} ✕</span>`;
+ if(S.artist)h+=`<span class="chip or" onclick="S.artist='';sync()">👤 ${esc(S.artist)} ✕</span>`;
+ if(S.matchSet)h+=`<span class="chip lm" onclick="S.matchSet=null;sync()">⚡ current sound ✕</span>`;
+ document.getElementById('chips').innerHTML=h;}
+function sync(){document.getElementById('selGenre').value=S.genre;document.getElementById('selStyle').value=S.style;document.getElementById('selLabel').value=S.label;
+ document.getElementById('selCty').value=S.country;document.getElementById('selArtist').value=S.artist;chips();render();}
+window.clickTrendKey=k=>{if(k==='Other')return;
+ if(S.trMode==='g')S.genre=S.genre===k?'':k;
+ else if(S.trMode==='s')S.style=S.style===k?'':k;
+ else if(S.trMode==='l')S.label=S.label===k?'':k;
+ else{const iso=D.N2I[k.toLowerCase()]||null;if(iso)S.country=S.country===iso?'':iso;}
+ sync();};
+window.setStyle=k=>{S.style=S.style===k?'':k;sync();};
+window.setGenre=k=>{S.genre=S.genre===k?'':k;sync();};
+window.setLabel=k=>{S.label=S.label===k?'':k;sync();};
+window.setArtist=k=>{S.artist=S.artist===k?'':k;sync();};
+window.setCountryName=k=>{const iso=D.N2I[k.toLowerCase()];if(iso){S.country=S.country===iso?'':iso;sync();}};
+function render(){chips();
+ const _F=filteredTracks();
+ const cc=document.getElementById('cntChip');
+ cc.innerHTML='▸ '+_F.length.toLocaleString()+' tracks · '+fmtH(_F.reduce((s,t)=>s+winHours(t),0));
+ cc.onclick=()=>setTab('explorer');
+ const V=document.getElementById('view');
+ if(S.tab==='overview'){V.innerHTML=rOverview();icWire();}
+ else if(S.tab==='trends')V.innerHTML=rTrends();
+ else if(S.tab==='world'){V.innerHTML=rWorld();paintMap();}
+ else if(S.tab==='rediscover')V.innerHTML=rRediscover();
+ else if(S.tab==='dig')V.innerHTML=rDig();
+ else V.innerHTML=rExplorer();}
+function rOverview(){const F=filteredTracks();
+ const th=F.reduce((s,t)=>s+winHours(t),0),tp=F.reduce((s,t)=>s+winPlays(t),0);
+ const arts={};F.forEach(t=>arts[t.a]=(arts[t.a]||0)+winHours(t));
+ const topA=Object.entries(arts).sort((a,b)=>b[1]-a[1]);
+ const nowSt=topStylesFor(['2025','2026']).slice(0,8);
+ const allSt=topStylesFor(YRS.filter(y=>+y>=S.y0&&+y<=S.y1)).slice(0,8);
+ const ml=Object.keys(D.M).filter(m=>+m.slice(0,4)>=S.y0&&+m.slice(0,4)<=S.y1);
+ const mv=ml.map(m=>D.M[m]/3600000);
+ return `<div class="kpis">
+ <div class="kpi"><div class="n">${fmtH(th)}</div><div class="l">hours</div></div>
+ <div class="kpi"><div class="n">${tp.toLocaleString()}</div><div class="l">plays</div></div>
+ <div class="kpi"><div class="n">${F.length.toLocaleString()}</div><div class="l">tracks</div></div>
+ <div class="kpi"><div class="n">${topA.length.toLocaleString()}</div><div class="l">artists</div></div>
+ <div class="kpi"><div class="n">${esc((nowSt[0]||['—'])[0])}</div><div class="l">current top subgenre</div></div>
+ </div>
+ <div class="grid g31">
+ <div class="card"><h3>Listening intensity <span class="sub">hours / month · amber trace = 7-mo moving avg${(S.style||S.label||S.country||S.artist||S.q)?' · era-cropped, unfiltered':''}</span></h3>${areaChart(ml.map(m=>MN[+m.slice(5,7)]+'-'+m.slice(2,4)),mv,250)}</div>
+ <div class="card"><h3>Top artists <span class="sub">by hours · click to filter</span></h3>${barList(topA.slice(0,14).map(([k,v])=>({k,v})),'','setArtist')}</div>
+ </div>
+ <div class="grid g2">
+ <div class="card"><h3>Your sound now <span class="sub">2025–26 · by hours</span></h3>${barList(nowSt.map(([k,v])=>({k,v})),'lm','setStyle')}</div>
+ <div class="card"><h3>Selected-era sound <span class="sub">${S.y0}–${S.y1}</span></h3>${barList(allSt.map(([k,v])=>({k,v})),'','setStyle')}</div>
+ </div>`;}
+function rTrends(){const mat=matFor(S.trMode);
+ // rising/fading
+ const share=(rowY,ya,yb)=>{let s=0;for(let y=ya;y<=yb;y++)s+=rowY[String(y)]||0;return s;};
+ let totThen=0,totNow=0;for(const r of Object.values(mat)){totThen+=share(r,S.thenA,S.thenB);totNow+=share(r,S.nowA,S.nowB);}
+ const movers=Object.entries(mat).map(([k,r])=>{const a=totThen?share(r,S.thenA,S.thenB)/totThen*100:0,
+  b=totNow?share(r,S.nowA,S.nowB)/totNow*100:0;return{k,a,b,d:b-a};})
+  .filter(m=>m.a>=.6||m.b>=.6).sort((x,y)=>Math.abs(y.d)-Math.abs(x.d)).slice(0,16);
+ const yopts=(id,val)=>YRS.map(y=>`<option ${+y===val?'selected':''}>${y}</option>`).join('');
+ const kindName={g:'Genres',s:'Subgenres',l:'Labels',c:'Countries'}[S.trMode];
+ return `<div class="ctl">
+ <span class="seg"><span class="${S.trMode==='g'?'on':''}" onclick="S.trMode='g';render()">GENRES</span><span class="${S.trMode==='s'?'on':''}" onclick="S.trMode='s';render()">SUBGENRES</span><span class="${S.trMode==='l'?'on':''}" onclick="S.trMode='l';render()">LABELS</span><span class="${S.trMode==='c'?'on':''}" onclick="S.trMode='c';render()">COUNTRIES</span></span>
+ <span class="seg"><span class="${!S.trAbs?'on':''}" onclick="S.trAbs=false;render()">SHARE %</span><span class="${S.trAbs?'on':''}" onclick="S.trAbs=true;render()">HOURS</span></span>
+ </div>
+ <div class="card"><h3>${kindName} through time <span class="sub">stacked ${S.trAbs?'hours':'share of listening'} per year · click legend to filter · Discogs-sourced</span></h3>${stackedArea(mat)}</div>
+ <div class="card" style="margin-top:14px"><h3>Rising ↑ / Fading ↓ <span class="sub">then:
+ <select onchange="S.thenA=+this.value;render()">${yopts('ta',S.thenA)}</select>–<select onchange="S.thenB=+this.value;render()">${yopts('tb',S.thenB)}</select>
+ &nbsp;vs now: <select onchange="S.nowA=+this.value;render()">${yopts('na',S.nowA)}</select>–<select onchange="S.nowB=+this.value;render()">${yopts('nb',S.nowB)}</select></span></h3>
+ <table><thead><tr><th>${kindName.slice(0,-1)}</th><th>then</th><th>now</th><th>Δ</th><th></th></tr></thead><tbody>
+ ${movers.map(m=>`<tr style="cursor:pointer" onclick="clickTrendKey('${jsq(m.k)}')"><td>${esc(m.k)}</td>
+ <td class="mut">${m.a.toFixed(1)}%</td><td>${m.b.toFixed(1)}%</td>
+ <td class="${m.d>=0?'delta-up':'delta-dn'}">${m.d>=0?'▲':'▼'} ${Math.abs(m.d).toFixed(1)}pp</td>
+ <td style="width:130px"><div class="btrk"><div class="bfill ${m.d>=0?'lm':'mg'}" style="width:${Math.min(100,Math.abs(m.d)*8)}%"></div></div></td></tr>`).join('')}
+ </tbody></table>
+ <div class="note">Share of enriched listening hours. Genre/style/label/country from Discogs release data (artist-level, hours split across an artist's styles). Beatport/Traxsource have no public APIs — Discogs styles are the cleanest cross-reference and far better than Spotify's genre tags.</div></div>`;}
+function rWorld(){const mat=matFor('c');
+ const totals={};for(const[k,r]of Object.entries(mat)){totals[k]=Object.values(r).reduce((x,y)=>x+y,0);}
+ const ranked=Object.entries(totals).sort((x,y)=>y[1]-x[1]);
+ let sel='';
+ if(S.country){const arts=Object.entries(D.A).filter(([a])=>{const m=metaOf(a);return m&&isoOf(m.c)===S.country&&artistPass(a,'c');})
+  .map(([a])=>[a,artistWinH(a)]).sort((x,y)=>y[1]-x[1]).slice(0,12);
+  const labs={};for(const t of D.T){const m=metaOf(t.a);if(!m||isoOf(m.c)!==S.country)continue;
+   if(!artistPass(t.a,'c'))continue;const k=labelOf(t);if(k)labs[k]=(labs[k]||0)+winHours(t);}
+  const topL=Object.entries(labs).sort((x,y)=>y[1]-x[1]).slice(0,10);
+  sel=`<div class="grid g2" style="margin-top:14px">
+  <div class="card"><h3>Artists · ${esc(I2N[S.country]||S.country)}</h3>${barList(arts.map(([k,v])=>({k,v})),'or','setArtist')}</div>
+  <div class="card"><h3>Labels · ${esc(I2N[S.country]||S.country)}</h3>${barList(topL.map(([k,v])=>({k,v})),'mg','setLabel')}</div></div>`;}
+ return `<div class="grid g31">
+ <div class="card"><h3>Where your music comes from <span class="sub">verified artist origin (MusicBrainz) · drag to spin · scroll to zoom · click to filter</span></h3>
+ <canvas id="globe" style="width:100%;display:block;cursor:grab"></canvas></div>
+ <div class="card"><h3>Top countries <span class="sub">by hours</span></h3><div class="scroll" style="max-height:640px">${barList(ranked.slice(0,22).map(([k,v])=>({k,v})),'lm','setCountryName')}</div></div>
+ </div>${sel}`;}
+const G={rot:[35,-22],k:1.15,spin:true,raf:0,idle:0};
+function spinLater(ms){clearTimeout(G.idle);G.idle=setTimeout(()=>{G.spin=true;},ms||2500);}
+function paintMap(){const cv=document.getElementById('globe');if(!cv)return;
+ cancelAnimationFrame(G.raf);
+ const mat=matFor('c'),totals={};
+ for(const[k,r]of Object.entries(mat)){const iso=D.N2I[k.toLowerCase()];if(iso)totals[iso]=(totals[iso]||0)+Object.values(r).reduce((x,y)=>x+y,0);}
+ const max=Math.max(1,...Object.values(totals));
+ const wrap=cv.parentElement,W=wrap.clientWidth-32,H=Math.max(540,Math.min(680,W*.78));
+ const dpr=window.devicePixelRatio||1;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';
+ const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+ const base=Math.min(W,H)/2-8;
+ const proj=d3.geoOrthographic().translate([W/2,H/2]).clipAngle(90);
+ const path=d3.geoPath(proj,ctx);
+ const grat=d3.geoGraticule10();
+ const mix=(c1,c2,f)=>c1.map((x,i)=>Math.round(x+(c2[i]-x)*f));
+ function colOf(iso){const h=totals[iso]||0;if(!h)return '#03150a';
+  const t=Math.log(1+h)/Math.log(1+max);
+  const rgb=t<.6?mix([4,26,12],[0,190,60],t/.6):mix([0,190,60],[210,255,210],(t-.6)/.4);
+  return `rgb(${rgb.join(',')})`;}
+ let hovered=null,dragging=false,moved=false,px=0,py=0;
+ function draw(){proj.rotate(G.rot).scale(base*G.k);
+  ctx.clearRect(0,0,W,H);
+  // sphere halo
+  ctx.beginPath();path({type:'Sphere'});ctx.fillStyle='#010806';
+  ctx.shadowColor='rgba(0,255,65,.35)';ctx.shadowBlur=26;ctx.fill();ctx.shadowBlur=0;
+  ctx.lineWidth=1.2;ctx.strokeStyle='rgba(0,255,65,.5)';ctx.stroke();
+  // graticule
+  ctx.beginPath();path(grat);ctx.lineWidth=.5;ctx.strokeStyle='rgba(0,255,65,.09)';ctx.stroke();
+  for(const f of D.GEO.features){
+   ctx.beginPath();path(f);
+   ctx.fillStyle=f.id===hovered?'#eaffea':colOf(f.id);ctx.fill();
+   if(f.id===S.country){ctx.lineWidth=1.6;ctx.strokeStyle='#fff';ctx.stroke();}
+   else{ctx.lineWidth=.5;ctx.strokeStyle='#000804';ctx.stroke();}}}
+ function loop(){if(!document.getElementById('globe'))return;
+  if(G.spin&&!dragging)G.rot[0]+=0.05;
+  draw();G.raf=requestAnimationFrame(loop);}
+ const tip=document.getElementById('tip');
+ function hit(e){const r=cv.getBoundingClientRect();const xy=[e.clientX-r.left,e.clientY-r.top];
+  const ll=proj.invert(xy);if(!ll||isNaN(ll[0]))return null;
+  // reject far side of globe
+  const p=proj(ll);if(!p||Math.hypot(p[0]-xy[0],p[1]-xy[1])>2)return null;
+  for(const f of D.GEO.features){if(d3.geoContains(f,ll))return f;}return null;}
+ cv.onpointerdown=e=>{dragging=true;moved=false;G.spin=false;clearTimeout(G.idle);
+  px=e.clientX;py=e.clientY;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';};
+ cv.onpointermove=e=>{
+  if(dragging){const dx=e.clientX-px,dy=e.clientY-py;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
+   G.rot[0]+=dx*0.28/G.k;G.rot[1]=Math.max(-85,Math.min(85,G.rot[1]-dy*0.28/G.k));px=e.clientX;py=e.clientY;}
+  else{const f=hit(e);hovered=f?f.id:null;
+   if(f){const h=totals[f.id]||0;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+10)+'px';
+    tip.innerHTML=`<b>${esc(f.properties.n)}</b><br>${h?fmtH(h)+' listened':'<span class=mut>no signal</span>'}`;}
+   else tip.style.display='none';}};
+ cv.onpointerup=e=>{dragging=false;cv.style.cursor='grab';spinLater(2500);
+  if(!moved){const f=hit(e);if(f&&totals[f.id]){S.country=S.country===f.id?'':f.id;tip.style.display='none';sync();return;}}};
+ cv.onpointerleave=()=>{hovered=null;tip.style.display='none';};
+ cv.onwheel=e=>{e.preventDefault();G.spin=false;spinLater(3000);
+  G.k=Math.max(.8,Math.min(4.5,G.k*(e.deltaY<0?1.09:0.92)));};
+ if(G.spin===false&&!G.idle)spinLater(2500);
+ loop();}
+function rRediscover(){
+ const now=2026;
+ let cands=filteredTracks().filter(t=>{
+  if(t.p<S.rdMin)return false;
+  if(t.h<0.25||t.h/t.p<0.008)return false; // drop skip-noise (avg <~30s/play)
+  const lastY=+t.l.slice(0,4);if(lastY>=S.rdBefore)return false;
+  if(S.rdPeak){const[pa,pb]=S.rdPeak.split('-').map(Number);
+   let best=null,bv=-1;for(const[y,v]of Object.entries(t.y))if(v>bv){bv=v;best=+y;}
+   if(best<pa||best>pb)return false;}
+  return true;});
+ cands.forEach(t=>{const gap=now-+t.l.slice(0,4);t._sc=t.p*Math.min(gap,6);});
+ const key={score:t=>t._sc,plays:t=>t.p,hours:t=>t.h,last:t=>-(+t.l.slice(0,4))}[S.rdSort];
+ cands.sort((a,b)=>key(b)-key(a));
+ const rows=cands.slice(0,300);
+ const peakOpts=['','2013-2016','2015-2017','2017-2019','2019-2021','2021-2023'];
+ return `<div class="ctl">
+ <button class="pbtn" onclick="matchCurrent()">⚡ MATCH MY CURRENT SOUND</button>
+ <label>min plays</label><select onchange="S.rdMin=+this.value;render()">${[2,3,5,8,12,20].map(v=>`<option ${v===S.rdMin?'selected':''}>${v}</option>`).join('')}</select>
+ <label>not heard since</label><select onchange="S.rdBefore=+this.value;render()">${[2020,2021,2022,2023,2024,2025,2026].map(v=>`<option ${v===S.rdBefore?'selected':''}>${v}</option>`).join('')}</select>
+ <label>peaked in</label><select onchange="S.rdPeak=this.value;render()">${peakOpts.map(v=>`<option value="${v}" ${v===S.rdPeak?'selected':''}>${v||'any era'}</option>`).join('')}</select>
+ <label>sort</label><select onchange="S.rdSort=this.value;render()">${['score','plays','hours','last'].map(v=>`<option ${v===S.rdSort?'selected':''}>${v}</option>`).join('')}</select>
+ </div>
+ <div class="card"><h3>Dormant gems <span class="sub">${cands.length.toLocaleString()} tracks you loved but haven't played since ${S.rdBefore} · click a name to preview${S.matchSet?' · matching your current sound':''} — showing ${rows.length}</span></h3>
+ <div class="scroll" style="max-height:640px"><table><thead><tr><th></th><th>Track</th><th>Artist</th><th>Style</th><th>Plays</th><th>Hrs</th><th>Active</th><th>History</th></tr></thead><tbody>
+ ${rows.map(t=>`<tr><td><a class="play" onclick="peek('${t.id}');return false;" title="preview">▶</a></td>
+ <td><b class="tname" onclick="peek('${t.id}')">${esc(t.n)}</b><div class="mut" style="font-size:10px">${esc(t.al)}</div></td>
+ <td class="cyt" style="cursor:pointer" onclick="setArtist('${jsq(t.a)}')">${esc(t.a)}</td>
+ <td>${tStyles(t).slice(0,2).map(s=>`<span class="stag" onclick="setStyle('${jsq(s)}')">${esc(s)}</span>`).join('')}${labelOf(t)?`<br><span class="stag" style="color:var(--or);border-color:#4a3510" onclick="setLabel('${jsq(labelOf(t))}')">${esc(labelOf(t))}</span>`:''}</td>
+ <td><b>${t.p}</b></td><td class="mut">${t.h.toFixed(1)}</td>
+ <td class="mut" style="font-size:10px">${t.f} →<br>${t.l}</td>
+ <td>${sparkYears(t.y)}</td></tr>`).join('')}
+ </tbody></table></div>
+ <div class="note">Score = plays × years dormant. Lime bars in history = 2024+. Use the global subgenre/label/country filters (top bar) to steer — e.g. filter "Deep House" + a label to mine era-specific gems for your current sets.</div></div>`;}
+window.matchCurrent=()=>{const top=topStylesFor(['2025','2026']).slice(0,5).map(x=>x[0]);
+ S.matchSet=new Set(top);sync();};
+function rExplorer(){const F=filteredTracks();
+ const dir=S.sortDir,k=S.sortT;
+ const kf={n:t=>t.n.toLowerCase(),a:t=>t.a.toLowerCase(),lb:t=>(labelOf(t)||'~').toLowerCase(),g:t=>(tGenres(t)[0]||'~').toLowerCase(),st:t=>(tStyles(t)[0]||'~').toLowerCase(),p:t=>t.p,h:t=>t.h,f:t=>t.f,l:t=>t.l,sk:t=>t.sk/t.p};
+ const sorted=[...F].sort((a,b)=>{const x=kf[k](a),y=kf[k](b);return(x<y?-1:x>y?1:0)*dir;});
+ const arts={};F.forEach(t=>{const o=arts[t.a]??={h:0,n:0};o.h+=winHours(t);o.n++;});
+ const topA=Object.entries(arts).sort((a,b)=>b[1].h-a[1].h).slice(0,400);
+ const th=(id,lab)=>`<th onclick="S.sortT='${id}';S.sortDir=S.sortT==='${id}'&&S.sortDir===-1?1:-1;S.sortT='${id}';render()">${lab}${S.sortT===id?(S.sortDir<0?' ▼':' ▲'):''}</th>`;
+ return `<div class="grid g31">
+ <div class="card"><h3>Tracks <span class="sub">${F.length.toLocaleString()} matching · showing 500 — <b style="color:var(--cy)">click a track name</b> for artwork · player · lyrics</span></h3>
+ <div class="scroll"><table><thead><tr><th></th>${th('n','Track')}${th('a','Artist')}${th('g','Genre')}${th('st','Subgenre')}${th('lb','Label')}${th('p','Plays')}${th('h','Hours')}${th('sk','Skip%')}${th('f','First')}${th('l','Last')}</tr></thead><tbody>
+ ${sorted.slice(0,500).map(t=>`<tr><td><a class="play" onclick="peek('${t.id}');return false;" title="preview">▶</a></td>
+ <td><b class="tname" onclick="peek('${t.id}')">${esc(t.n)}</b></td><td class="cyt" style="cursor:pointer" onclick="setArtist('${jsq(t.a)}')">${esc(t.a)}</td>
+ <td>${tGenres(t).slice(0,2).map(g=>`<span class="stag" onclick="setGenre('${jsq(g)}')">${esc(g)}</span>`).join('')}</td>
+ <td>${tStyles(t).slice(0,3).map(x=>`<span class="stag" onclick="setStyle('${jsq(x)}')">${esc(x)}</span>`).join('')}</td>
+ <td>${labelOf(t)?`<span class="stag" onclick="setLabel('${jsq(labelOf(t))}')">${esc(labelOf(t))}</span>`:''}</td>
+ <td>${t.p}</td><td>${t.h.toFixed(1)}</td><td class="mut">${Math.round(t.sk/t.p*100)}%</td>
+ <td class="mut">${t.f}</td><td class="mut">${t.l}</td></tr>`).join('')}</tbody></table></div></div>
+ <div class="card"><h3>Artists <span class="sub">by hours in era</span></h3>
+ <div class="scroll"><table><thead><tr><th>Artist</th><th>Hours</th><th>Tracks</th><th>Style</th></tr></thead><tbody>
+ ${topA.map(([a,o])=>`<tr><td class="cyt" style="cursor:pointer" onclick="setArtist('${jsq(a)}')">${esc(a)}</td>
+ <td>${o.h.toFixed(1)}</td><td class="mut">${o.n}</td>
+ <td>${stylesOf(a).slice(0,2).map(s=>`<span class="stag" onclick="setStyle('${jsq(s)}')">${esc(s)}</span>`).join('')}</td></tr>`).join('')}
+ </tbody></table></div></div></div>`;}
+// ---------- dig / recommendations ----------
+let HEARD=null, HEARD_TRK=null;
+function heardSets(){
+ if(!HEARD){HEARD=new Set(Object.keys(D.A).map(x=>x.toLowerCase()));
+  HEARD_TRK=new Set(D.T.map(t=>(t.a+'|'+t.n).toLowerCase().replace(/[^a-z0-9|]/g,'')));}
+ return [HEARD,HEARD_TRK];}
+function seedArtists(){                       // what the current filter is "about"
+ const F=filteredTracks(),h={};
+ F.forEach(t=>h[t.a]=(h[t.a]||0)+winHours(t));
+ return Object.entries(h).sort((a,b)=>b[1]-a[1]).slice(0,25);}
+function recArtists(){
+ // Last.fm normalises match so each seed's TOP neighbour is always 1.0 - even when
+ // that seed has thin scrobble data. Single-seed hits are therefore mostly noise
+ // (Guti -> 'nbsplv' 1.0). Corroboration across seeds is the real signal.
+ const SA=D.SIM||{};if(!Object.keys(SA).length)return[];
+ const [heard]=heardSets(),seeds=seedArtists(),sc={},why={};
+ const tot=seeds.reduce((s,x)=>s+x[1],0)||1;
+ for(const [a,h] of seeds){
+  for(const p of (SA[a]||[])){
+   const k=p.n; if(heard.has(k.toLowerCase()))continue;
+   const add=p.m*(h/tot);
+   sc[k]=(sc[k]||0)+add;
+   (why[k]=why[k]||[]).push([a,add]);}}
+ let rows=Object.entries(sc).map(([k,v])=>({n:k,v,ns:why[k].length,
+   why:why[k].sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0])}));
+ rows.forEach(r=>{r.v*=Math.sqrt(r.ns);});           // reward agreement
+ const strong=rows.filter(r=>r.ns>=S.digMin).sort((a,b)=>b.v-a.v);
+ if(strong.length>=15||S.digMin<=1)return strong.slice(0,60);
+ const weak=rows.filter(r=>r.ns<S.digMin).sort((a,b)=>b.v-a.v).slice(0,60-strong.length);
+ return strong.concat(weak);}
+function recReleases(){
+ const R=D.RECS;if(!R)return[];
+ const [,heardTrk]=heardSets();
+ const key=x=>x.replace(/[^a-z0-9|]/g,'');
+ const seeds=seedArtists().map(x=>x[0]);
+ const lbH={};filteredTracks().forEach(t=>{const l=labelOf(t);if(l)lbH[l]=(lbH[l]||0)+winHours(t);});
+ const topLb=Object.entries(lbH).sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]);
+ const out=[],seen=new Set();
+ const push=(rows,src,tag)=>{for(const r of (rows||[])){
+   const k=key((r.a+'|'+r.n).toLowerCase());
+   if(heardTrk.has(k)||seen.has(k))continue;seen.add(k);
+   out.push({...r,src,tag});}};
+ for(const a of seeds.slice(0,14)) push((R.artist||{})[a],a,'artist');
+ for(const l of topLb) push((R.label||{})[l],l,'label');
+ out.sort((a,b)=>(b.y||0)-(a.y||0));
+ return out.slice(0,80);}
+function digCtx(){const p=[];
+ if(S.artist)p.push(S.artist);if(S.genre)p.push(S.genre);if(S.style)p.push(S.style);
+ if(S.label)p.push(S.label);if(S.country)p.push(I2N[S.country]||S.country);if(S.q)p.push('“'+S.q+'”');
+ if(S.y0!==2013||S.y1!==2026)p.push(S.y0+'–'+S.y1);
+ return p.length?p.join(' · '):'your whole library';}
+function sUri(q){return 'spotify:search:'+encodeURIComponent(q);}
+function rDig(){
+ const ra=recArtists(),rr=recReleases();
+ const noSim=!D.SIM||!Object.keys(D.SIM).length, noRec=!D.RECS;
+ return `<div class="card" style="margin-bottom:14px"><h3>Digging from <span class="sub">${esc(digCtx())} — nothing here is in your history</span></h3>
+ <div class="note">Change any filter (subgenre, label, country, artist, era) and these re-rank around it.</div>
+ <div class="ctl" style="margin:10px 0 0"><label>corroboration</label>
+ <span class="seg">${[1,2,3].map(n=>`<span class="${S.digMin===n?'on':''}" onclick="S.digMin=${n};render()">≥${n} SEED${n>1?'S':''}</span>`).join('')}</span>
+ <span class="mut" style="font-size:11px">how many of your artists must independently point at a name — 1 lets in noise</span></div></div>
+ <div class="grid g2">
+ <div class="card"><h3>Artists you've never played <span class="sub">Last.fm similarity, weighted by your hours</span></h3>
+  ${noSim?'<div class="note">similar-artist data still being mined…</div>':
+   (ra.length?`<div class="scroll" style="max-height:560px">${ra.map(r=>`<div class="dig-row">
+   <div class="dig-n"><b class="tname" onclick="peekRec('artist','${jsq(r.n)}')">${esc(r.n)}</b><div class="dig-why">${r.ns}× · because you play ${r.why.map(esc).join(', ')}</div></div>
+   <div class="dig-sc">${(r.v*100).toFixed(0)}</div>
+   <a class="dig-go" onclick="peekRec('artist','${jsq(r.n)}');return false;" title="preview">▶</a></div>`).join('')}</div>`
+   :'<div class="note">no new names for this selection — try widening the filters</div>')}
+ </div>
+ <div class="card"><h3>Releases you've never heard <span class="sub">Discogs, from your labels &amp; artists</span></h3>
+  ${noRec?'<div class="note">release catalogues still being mined…</div>':
+   (rr.length?`<div class="scroll" style="max-height:560px">${rr.map(r=>`<div class="dig-row">
+   <div class="dig-n"><b class="tname" onclick="peekRec('release','${jsq(r.n)}','${jsq(r.a)}')">${esc(r.n)}</b><div class="dig-why">${esc(r.a)}${r.y?' · '+r.y:''} · via ${r.tag} ${esc(r.src)}${(r.s||[]).length?' · '+esc(r.s.join(', ')):''}</div></div>
+   <a class="dig-go" onclick="peekRec('release','${jsq(r.n)}','${jsq(r.a)}');return false;" title="preview">▶</a></div>`).join('')}</div>`
+   :'<div class="note">nothing unheard found for this selection</div>')}
+ </div></div>`;}
+
+// ---------- track peek ----------
+const OE={},LY={};let PKHIST=[];
+function updateRe(){const el=document.getElementById('peekRe');if(!el)return;
+ const open=document.getElementById('peek').style.display==='block';
+ if(PKHIST.length&&!open){const t=D.T.find(x=>x.id===PKHIST[0]);
+  if(t){document.getElementById('peekReN').textContent=t.n;el.style.display='flex';return;}}
+ el.style.display='none';}
+window.closePeek=()=>{document.getElementById('peek').style.display='none';
+ document.getElementById('peekBg').style.display='none';updateRe();};
+window.reopenPeek=()=>{if(PKHIST.length)peek(PKHIST[0]);};
+const LFM='__LASTFM_KEY__';
+const RCACHE={};
+window.peekRec=(kind,name,artist)=>{
+ const p=document.getElementById('peek');
+ const title=kind==='artist'?name:name, sub=kind==='artist'?'suggested artist':esc(artist||'');
+ const sq=kind==='artist'?name:(artist+' '+name);
+ p.innerHTML=`<span class="pclose" onclick="closePeek()">✕</span>
+ <div class="pk-top"><div class="pk-art" id="pkArt" style="display:flex;align-items:center;justify-content:center;
+   font-size:46px;color:#1c5c33;text-shadow:0 0 16px rgba(0,255,65,.35)">${esc((kind==='artist'?name:artist||name).slice(0,1).toUpperCase())}</div>
+  <div class="pk-meta"><h2>${esc(title)}</h2><div class="pa">${sub}</div>
+  <div style="margin-top:8px" id="pkRecMeta"><span class="mut">loading…</span></div>
+  <div style="margin-top:6px"><b style="color:var(--mut);font-weight:400">open</b>
+   <a class="pa" href="spotify:search:${encodeURIComponent(sq)}">app ↗</a> ·
+   <a class="pa" href="https://open.spotify.com/search/${encodeURIComponent(sq)}" target="_blank">web ↗</a></div>
+  </div></div>
+ <div class="pk-sec"><h4>not in your library</h4>
+  <div class="note" style="margin:0">Nothing here has ever appeared in your ${D.T.length.toLocaleString()} played tracks.</div></div>
+ <div class="pk-sec"><h4>about</h4><div id="pkBio" class="mut" style="font-size:12px;line-height:1.6">loading…</div></div>
+ <div class="pk-sec"><h4>popular tracks</h4><div id="pkTop" class="mut">loading…</div></div>`;
+ p.style.display='block';p.scrollTop=0;document.getElementById('peekBg').style.display='block';
+ // once resolved, a suggestion embeds and shows artwork exactly like a library track
+ const RID=(D.RIDS||{artist:{},album:{}});
+ const sid=kind==='artist'?RID.artist[name]:RID.album[(artist||'')+'|'+name];
+ if(sid){const et=kind==='artist'?'artist':'album';
+  const ps=document.createElement('div');ps.className='pk-sec';
+  ps.innerHTML=`<h4>player</h4><iframe style="border-radius:6px" width="100%" height="${kind==='artist'?152:232}"
+   frameborder="0" loading="lazy" allow="encrypted-media"
+   src="https://open.spotify.com/embed/${et}/${sid}"></iframe>`;
+  p.querySelector('.pk-sec').after(ps);
+  fetch(`https://open.spotify.com/oembed?url=spotify:${et}:${sid}`).then(r=>r.json())
+   .then(j=>{if(j.thumbnail_url){const el=document.getElementById('pkArt');
+     el.outerHTML=`<img class="pk-art" id="pkArt" src="${j.thumbnail_url}" alt="">`;}}).catch(()=>{});}
+ const lf=(m,extra)=>fetch('https://ws.audioscrobbler.com/2.0/?'+new URLSearchParams(
+   {method:m,api_key:LFM,format:'json',autocorrect:1,...extra})).then(r=>r.json()).catch(()=>null);
+ const A=kind==='artist'?name:artist;
+ const ck='a|'+A;
+ const render=j=>{
+  const a=j&&j.artist;if(!a){document.getElementById('pkBio').textContent='no Last.fm entry';return;}
+  const st=a.stats||{},tags=((a.tags||{}).tag||[]).map(t=>t.name);
+  const mEl=document.getElementById('pkRecMeta');
+  if(mEl)mEl.innerHTML=`<div><b style="color:var(--mut);font-weight:400;min-width:74px;display:inline-block">listeners</b> ${(+st.listeners||0).toLocaleString()}</div>
+   <div><b style="color:var(--mut);font-weight:400;min-width:74px;display:inline-block">scrobbles</b> ${(+st.playcount||0).toLocaleString()}</div>
+   <div><b style="color:var(--mut);font-weight:400;min-width:74px;display:inline-block">tags</b> ${tags.slice(0,5).map(t=>`<span class="stag">${esc(t)}</span>`).join('')||'—'}</div>`;
+  const bio=((a.bio||{}).summary||'').replace(/<a .*?<\/a>/g,'').trim();
+  document.getElementById('pkBio').textContent=bio||'no biography';};
+ if(RCACHE[ck])render(RCACHE[ck]); else lf('artist.getinfo',{artist:A}).then(j=>{RCACHE[ck]=j;render(j);});
+ lf('artist.gettoptracks',{artist:A,limit:8}).then(j=>{
+  const tr=((j||{}).toptracks||{}).track||[];const el=document.getElementById('pkTop');if(!el)return;
+  el.innerHTML=tr.length?tr.map(x=>`<div class="pk-sib" onclick="location.href='spotify:search:${encodeURIComponent(A+' '+x.name)}'">
+   <span>${esc(x.name)}</span><span class="mut">${(+x.listeners||0).toLocaleString()} listeners</span></div>`).join('')
+   :'<span class="mut">none listed</span>';});
+ // artwork: Discogs thumb if we have one for a release, else Spotify oEmbed on a search is impossible -> leave blank
+
+};
+addEventListener('keydown',e=>{
+ if(e.target&&/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+ if(e.key==='Escape')closePeek();
+ else if(e.key==='p'||e.key==='P')reopenPeek();});
+window.peek=(id)=>{
+ const t=D.T.find(x=>x.id===id);if(!t)return;
+ PKHIST=[id].concat(PKHIST.filter(x=>x!==id)).slice(0,8);
+ const p=document.getElementById('peek');
+ const recent=PKHIST.length>1?`<div class="pk-recent">${PKHIST.map(h=>{const x=D.T.find(y=>y.id===h);
+  return x?`<span class="${h===id?'cur':''}" title="${esc(x.n)}" onclick="peek('${h}')">${esc(x.n)}</span>`:''}).join('')}</div>`:'';
+ const sib=D.T.filter(x=>x.al===t.al&&x.a===t.a).sort((a,b)=>b.h-a.h);
+ const alH=sib.reduce((s,x)=>s+x.h,0),alP=sib.reduce((s,x)=>s+x.p,0);
+ const g=tGenres(t),st=tStyles(t),lb=labelOf(t),m=metaOf(t.a)||{};
+ p.innerHTML=`<span class="pclose" onclick="closePeek()">✕</span>${recent}
+ <div class="pk-top">
+  <img class="pk-art" id="pkArt" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>">
+  <div class="pk-meta">
+   <h2>${esc(t.n)}</h2>
+   <div class="pa" onclick="closePeek();setArtist('${jsq(t.a)}')">${esc(t.a)} ↗</div>
+   <div style="margin-top:8px">
+   <div><b>album</b> ${esc(t.al||'—')}</div>
+   <div><b>genre</b> ${g.length?g.map(x=>`<span class="stag" onclick="closePeek();setGenre('${jsq(x)}')">${esc(x)}</span>`).join(''):'<span class="mut">—</span>'}</div>
+   <div><b>subgenre</b> ${st.length?st.slice(0,5).map(x=>`<span class="stag" onclick="closePeek();setStyle('${jsq(x)}')">${esc(x)}</span>`).join(''):'<span class="mut">—</span>'}</div>
+   <div><b>label</b> ${lb?`<span class="stag" onclick="closePeek();setLabel('${jsq(lb)}')">${esc(lb)}</span>`:'<span class="mut">—</span>'}</div>
+   <div><b>origin</b> ${m.c?esc(m.c):'<span class="mut">unverified</span>'}</div>
+   <div><b>open</b> <a class="pa" href="spotify:track:${t.id}">app ↗</a> · <a class="pa" href="https://open.spotify.com/track/${t.id}" target="_blank">web ↗</a></div>
+   </div>
+  </div></div>
+ <div class="pk-sec"><h4>your history</h4><div class="pk-stat">
+  <div><span>${t.p}</span><small>plays</small></div>
+  <div><span>${t.h.toFixed(1)}</span><small>hours</small></div>
+  <div><span>${Math.round(t.sk/t.p*100)}%</span><small>skipped</small></div>
+  <div><span>${t.f.slice(2)}</span><small>first heard</small></div>
+ </div>
+ <div style="margin-top:10px">${sparkYears(t.y)} <span class="mut" style="font-size:10px">${t.f} → ${t.l}</span></div></div>
+ <div class="pk-sec"><h4>player</h4>
+  <iframe style="border-radius:6px" src="https://open.spotify.com/embed/track/${t.id}" width="100%" height="80"
+   frameborder="0" loading="lazy" allow="encrypted-media"></iframe></div>
+ ${sib.length>1?`<div class="pk-sec"><h4>also from “${esc(t.al)}” <span class="mut" style="text-transform:none;letter-spacing:0">· ${alP} plays · ${alH.toFixed(1)} h</span></h4>
+  ${sib.map(x=>`<div class="pk-sib" onclick="peek('${x.id}')"><span>${x.id===t.id?'▸ ':''}${esc(x.n)}</span><span class="mut">${x.p}× · ${x.h.toFixed(1)}h</span></div>`).join('')}</div>`:''}
+ <div class="pk-sec"><h4>lyrics</h4><div id="pkLyr" class="mut">loading…</div></div>`;
+ p.style.display='block';p.scrollTop=0;document.getElementById('peekBg').style.display='block';updateRe();
+ // artwork via Spotify oEmbed (no auth)
+ const setArt=u=>{const el=document.getElementById('pkArt');if(el&&u)el.src=u;};
+ if(OE[t.id])setArt(OE[t.id]);
+ else fetch(`https://open.spotify.com/oembed?url=spotify:track:${t.id}`).then(r=>r.json())
+   .then(j=>{OE[t.id]=j.thumbnail_url;setArt(j.thumbnail_url);}).catch(()=>{});
+ // lyrics via LRCLIB (no auth)
+ const box=()=>document.getElementById('pkLyr');
+ const key=t.a+'|'+t.n;
+ const strip=x=>x.replace(/\s*[\(\[].*?[\)\]]/g,'').replace(/\s*-\s*(original|radio|extended|club|dub|vocal|instrumental|remix|edit|mix|version).*$/i,'').trim();
+ if(LY[key]!==undefined){if(box())box().textContent=LY[key]||'no lyrics found (instrumental or not in LRCLIB)';}
+ else fetch('https://lrclib.net/api/get?'+new URLSearchParams({artist_name:strip(t.a),track_name:strip(t.n)}))
+   .then(r=>r.ok?r.json():null)
+   .then(j=>{const l=j&&(j.plainLyrics||'');LY[key]=l;if(box())box().textContent=l||'no lyrics found (instrumental or not in LRCLIB)';})
+   .catch(()=>{if(box())box().textContent='lyrics lookup failed';});
+};
+
+// ---------- init ----------
+(function(){
+ const allH=Object.values(D.A).reduce((s,a)=>s+a.h,0);
+ document.getElementById('hdrHours').textContent=Math.round(allH).toLocaleString();
+ // populate filter selects
+ const stC={},lbC={},ctC={},gC={};
+ for(const t of D.T){tGenres(t).forEach(g=>gC[g]=(gC[g]||0)+t.h);
+  tStyles(t).forEach(x=>stC[x]=(stC[x]||0)+t.h);}
+ for(const[a,info]of Object.entries(D.A)){const m=metaOf(a);if(!m)continue;
+  const iso=isoOf(m.c);if(iso)ctC[iso]=(ctC[iso]||0)+info.h;}
+ for(const t of D.T){const k=labelOf(t);if(k)lbC[k]=(lbC[k]||0)+t.h;}
+ const fill=(id,obj,fmt)=>{const el=document.getElementById(id);
+  Object.entries(obj).sort((a,b)=>(fmt?fmt(a[0]):a[0]).localeCompare(fmt?fmt(b[0]):b[0],undefined,{sensitivity:'base'})).forEach(([k,v])=>{
+   const o=document.createElement('option');o.value=k;o.textContent=fmt?fmt(k):k;el.appendChild(o);});};
+ fill('selGenre',gC);fill('selStyle',stC);fill('selLabel',lbC);fill('selCty',ctC,k=>I2N[k]||k);
+ const aC={};Object.keys(D.A).forEach(a=>aC[a]=1);fill('selArtist',aC);
+ document.getElementById('selArtist').onchange=e=>{S.artist=e.target.value;sync();};
+ document.getElementById('selGenre').onchange=e=>{S.genre=e.target.value;sync();};
+ document.getElementById('selStyle').onchange=e=>{S.style=e.target.value;sync();};
+ document.getElementById('selLabel').onchange=e=>{S.label=e.target.value;sync();};
+ document.getElementById('selCty').onchange=e=>{S.country=e.target.value;sync();};
+ const y0=document.getElementById('selY0'),y1=document.getElementById('selY1');
+ YRS.forEach(y=>{y0.add(new Option(y,y));y1.add(new Option(y,y));});
+ y0.value='2013';y1.value='2026';
+ y0.onchange=()=>{S.y0=+y0.value;if(S.y1<S.y0){S.y1=S.y0;y1.value=y0.value;}render();};
+ y1.onchange=()=>{S.y1=+y1.value;if(S.y1<S.y0){S.y0=S.y1;y0.value=y1.value;}render();};
+ let deb;document.getElementById('q').oninput=e=>{clearTimeout(deb);deb=setTimeout(()=>{S.q=e.target.value.toLowerCase().trim();render();},160);};
+ render();
+})();
+</script></body></html>

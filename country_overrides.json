@@ -1,0 +1,5 @@
+{
+  "_comment": "Manual artist-origin corrections. Key = artist name exactly as Spotify writes it, value = ISO-3166-1 alpha-2 code. Applied last, wins over MusicBrainz. Set to null to force 'no origin'.",
+  "Chaos In The CBD": "NZ",
+  "Guti": "AR"
+}

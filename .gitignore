@@ -1,0 +1,16 @@
+# your data - never commit
+listening_base.json
+Spotify Dive.html
+plays_incremental.jsonl
+enrich_targets.json
+track_labels.json
+track_albums.json
+album_labels.json
+rec_spotify_ids.json
+.spotify_tokens.json
+# secrets
+.env
+# noise
+*.log
+.DS_Store
+.refresh.lock
