@@ -87,6 +87,29 @@ background:#000;border:1px solid var(--cy);color:var(--cy)}
 .ctl label{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:1px}
 .delta-up{color:var(--cy);font-weight:900}.delta-dn{color:var(--mg);font-weight:900}
 .note{color:var(--mut);font-size:11px;margin-top:8px;line-height:1.5}
+.msWrap{position:relative;display:inline-block}
+.msBtn{background:#000;border:1px solid var(--line);color:var(--cy);padding:6px 10px;border-radius:3px;
+ font:inherit;cursor:pointer;min-width:130px;text-align:left;white-space:nowrap}
+.msBtn:hover{border-color:var(--cy)}
+.msBtn.on{border-color:var(--cy);box-shadow:0 0 8px rgba(0,255,65,.3)}
+.msBtn.out{border-color:var(--mg);color:var(--mg);box-shadow:0 0 8px rgba(255,68,68,.25)}
+.msBtn i{float:right;opacity:.6;font-style:normal;margin-left:8px}
+.msPanel{display:none;position:absolute;z-index:120;top:calc(100% + 4px);left:0;width:290px;
+ background:#020c06;border:1px solid var(--cy);border-radius:3px;box-shadow:0 8px 28px rgba(0,0,0,.7);padding:8px}
+.msPanel.open{display:block}
+.msPanel input[type=text]{width:100%;margin-bottom:6px}
+.msTools{display:flex;gap:4px;margin-bottom:6px;align-items:center}
+.msTools button{flex:0 0 auto;background:#01140a;border:1px solid var(--line);color:var(--mut);
+ border-radius:3px;font:inherit;font-size:10px;padding:3px 7px;cursor:pointer}
+.msTools button:hover{border-color:var(--cy);color:var(--cy)}
+.msTools .seg{margin-left:auto}
+.msTools .seg span{padding:3px 8px;font-size:10px}
+.msList{max-height:260px;overflow-y:auto}
+.msItem{display:flex;align-items:center;gap:7px;padding:3px 5px;border-radius:2px;cursor:pointer;font-size:12px}
+.msItem:hover{background:rgba(0,255,65,.08)}
+.msItem input{margin:0;accent-color:var(--cy)}
+.msItem .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msItem .h{color:var(--mut);font-size:10px}
 .tname{cursor:pointer;border-bottom:1px dotted #2f6b42;transition:.12s}
 .tname:hover{color:#eaffea;border-bottom-color:var(--cy);text-shadow:0 0 8px rgba(0,255,65,.6)}
 #peekRe{position:fixed;right:18px;bottom:18px;z-index:150;display:none;align-items:center;gap:8px;
@@ -141,11 +164,11 @@ background:#000;border:1px solid var(--cy);color:var(--cy)}
 </header>
 <div class="fbar">
 <input id="q" placeholder="⌕ search track / artist / album…">
-<select id="selGenre"><option value="">genre…</option></select>
-<select id="selStyle"><option value="">subgenre…</option></select>
-<select id="selLabel"><option value="">label…</option></select>
-<select id="selArtist"><option value="">artist…</option></select>
-<select id="selCty"><option value="">country…</option></select>
+<span class="msWrap" id="ms_genre"></span>
+<span class="msWrap" id="ms_style"></span>
+<span class="msWrap" id="ms_label"></span>
+<span class="msWrap" id="ms_artist"></span>
+<span class="msWrap" id="ms_country"></span>
 <select id="selY0"></select><span class="mut">→</span><select id="selY1"></select>
 <span id="chips"></span><span id="cntChip" class="chip or" style="margin-left:auto" title="open the rows in Explorer"></span>
 </div>
@@ -171,7 +194,15 @@ const PAL=['#00ff41','#ffb000','#41d9ff','#ff5252','#e8b3ff','#ffe93d','#ff8c3d'
 const S={tab:'overview',q:'',style:'',label:'',country:'',artist:'',y0:2013,y1:2026,
  trMode:'s',trAbs:false,thenA:2018,thenB:2022,nowA:2025,nowB:2026,
  rdMin:5,rdBefore:2024,rdPeak:'',rdSort:'score',matchSet:null,
- sortT:'h',sortDir:-1,digMin:2,genre:''};
+ sortT:'h',sortDir:-1,digMin:2};
+// Excel-style filters: each dimension holds a SET of chosen values plus a mode.
+// mode 'in'  -> keep rows matching any chosen value
+// mode 'out' -> keep rows matching none of them (this is what a plain <select>
+//               could never express, and the reason for the rewrite)
+const DIMS=['genre','style','label','artist','country'];
+const SEL={},MODE={};DIMS.forEach(d=>{SEL[d]=new Set();MODE[d]='in';});
+function selPass(dim,vals){const set=SEL[dim];if(!set.size)return true;
+ const hit=vals.some(v=>v!=null&&set.has(v));return MODE[dim]==='in'?hit:!hit;}
 const ALIAS={'uk':'GB','usa':'US','us':'US','russia':'RU','ussr':'RU','czech republic':'CZ','czechia':'CZ',
 'holland':'NL','south korea':'KR','korea':'KR','taiwan':'TW','vietnam':'VN','iran':'IR','syria':'SY',
 'venezuela':'VE','bolivia':'BO','tanzania':'TZ','moldova':'MD','macedonia':'MK','north macedonia':'MK',
@@ -188,6 +219,7 @@ function jsq(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function fmtH(h){return h>=10?Math.round(h)+' h':h>=1?h.toFixed(1)+' h':Math.round(h*60)+' min';}
 const metaOf=a=>D.META[a]||null;
 function labelOf(t){return t.lb||((metaOf(t.a)||{}).l||[])[0]||null;}
+function countryOf(a){const m=metaOf(a);return m?isoOf(m.c):null;}
 function aStyles(a){const m=metaOf(a);return (m&&m.s)||[];}
 function aGenres(a){const m=metaOf(a);return (m&&m.g)||[];}
 // genre lives on the RELEASE; fall back to the artist profile only when the
@@ -202,17 +234,24 @@ function stylesOf(a){if(_agS[a])return _agS[a];const c={};
 function genresOf(a){if(_agG[a])return _agG[a];const c={};
  D.T.forEach(t=>{if(t.a===a)tGenres(t).forEach(x=>c[x]=(c[x]||0)+t.h);});
  return _agG[a]=Object.entries(c).sort((x,y)=>y[1]-x[1]).map(x=>x[0]);}
-function artistPass(a,skip){const m=metaOf(a);
- if(S.label&&skip!=='l'){if(!m||!(m.l||[]).includes(S.label))return false;}
- if(S.country&&skip!=='c'){if(!m||isoOf(m.c)!==S.country)return false;}
- return true;}
+function artistPass(a,skip){return true;}   // superseded by selPass
 function trackPass(t){
- if(S.artist&&t.a!==S.artist)return false;
- if(S.genre&&!tGenres(t).includes(S.genre))return false;
- if(S.style&&!tStyles(t).includes(S.style))return false;
- if(!artistPass(t.a,'l'))return false;
- if(S.label&&labelOf(t)!==S.label)return false;
- if(S.matchSet){const st=stylesOf(t.a);if(!st.some(x=>S.matchSet.has(x)))return false;}
+ if(!selPass('artist',[t.a]))return false;
+ if(!selPass('genre',tGenres(t)))return false;
+ if(!selPass('style',tStyles(t)))return false;
+ if(!selPass('label',[labelOf(t)]))return false;
+ if(!selPass('country',[countryOf(t.a)]))return false;
+ let wp=0;for(const[y,p]of Object.entries(t.y))if(+y>=S.y0&&+y<=S.y1)wp+=p;
+ if(!wp)return false;
+ if(S.q){const s=(t.n+' '+t.a+' '+t.al).toLowerCase();if(!s.includes(S.q))return false;}
+ return true;}
+// same as trackPass but ignoring ONE dimension, so a chart of that dimension
+// still shows every value rather than only the selected ones
+function trackPassExcept(t,skip){
+ for(const d of DIMS){ if(d===skip) continue;
+  const v=d==='artist'?[t.a]:d==='genre'?tGenres(t):d==='style'?tStyles(t)
+        :d==='label'?[labelOf(t)]:[countryOf(t.a)];
+  if(!selPass(d,v))return false;}
  let wp=0;for(const[y,p]of Object.entries(t.y))if(+y>=S.y0&&+y<=S.y1)wp+=p;
  if(!wp)return false;
  if(S.q){const s=(t.n+' '+t.a+' '+t.al).toLowerCase();if(!s.includes(S.q))return false;}
@@ -300,30 +339,25 @@ function barList(items,cls,click){const max=Math.max(1e-9,...items.map(i=>i.v));
  return items.map(i=>`<div class="brow" onclick="${click}('${jsq(i.k)}')"><div class="blab" title="${esc(i.k)}">${esc(i.k)}</div>
  <div class="btrk"><div class="bfill ${cls}" style="width:${i.v/max*100}%"></div><div class="bval">${i.fmt||fmtH(i.v)}</div></div></div>`).join('');}
 // ---------- aggregations ----------
+const KIND2DIM={g:'genre',s:'style',l:'label',c:'country'};
 function matFor(kind){const m={};
  if(kind==='g'||kind==='s'){
   for(const t of D.T){
-   if(S.artist&&t.a!==S.artist)continue;
-   if(!artistPass(t.a))continue;
-   if(S.label&&labelOf(t)!==S.label)continue;
-   const other=kind==='g'?S.style:S.genre;
-   if(other&&!(kind==='g'?tStyles(t):tGenres(t)).includes(other))continue;
+   if(!trackPassExcept(t,KIND2DIM[kind]))continue;
    const keys=kind==='g'?tGenres(t):tStyles(t);if(!keys.length)continue;
    for(const k of keys){const row=m[k]??={};
     for(const[y,p]of Object.entries(t.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+t.h*p/t.p/keys.length;}}}
   return m;}
  if(kind==='l'){
   for(const t of D.T){
-   if(S.artist&&t.a!==S.artist)continue;
-   if(!artistPass(t.a,'l'))continue;
+   if(!trackPassExcept(t,'label'))continue;
    const k=labelOf(t);if(!k)continue;
    const row=m[k]??={};
    for(const[y,p]of Object.entries(t.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+t.h*p/t.p;}}
   return m;}
  for(const[a,info]of Object.entries(D.A)){
-  if(S.artist&&a!==S.artist)continue;
   const me=metaOf(a);if(!me)continue;
-  if(!artistPass(a,kind))continue;
+  if(!D.T.some(t=>t.a===a&&trackPassExcept(t,KIND2DIM[kind]||'country')))continue;
   let keys=kind==='c'?[me.c?(I2N[isoOf(me.c)]||me.c.split('&')[0].split(',')[0].trim()):null].filter(Boolean):
    kind==='g'?genresOf(a):kind==='s'?stylesOf(a):(me.l||[]);
   if(!keys.length)continue;
@@ -339,27 +373,29 @@ function topStylesFor(years){const c={};
 // ---------- render ----------
 function setTab(t){S.tab=t;document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.dataset.t===t));render();}
 document.querySelectorAll('.tab').forEach(e=>e.onclick=()=>setTab(e.dataset.t));
+const DIMICON={genre:'▣',style:'◆',label:'⬢',artist:'👤',country:'🌐'};
+const DIMCLS={genre:'',style:'',label:'mg',artist:'or',country:'lm'};
+function selLabelFor(dim,v){return dim==='country'?(I2N[v]||v):v;}
 function chips(){let h='';
- if(S.genre)h+=`<span class="chip" onclick="S.genre='';sync()">▣ ${esc(S.genre)} ✕</span>`;
- if(S.style)h+=`<span class="chip" onclick="S.style='';sync()">◆ ${esc(S.style)} ✕</span>`;
- if(S.label)h+=`<span class="chip mg" onclick="S.label='';sync()">⬢ ${esc(S.label)} ✕</span>`;
- if(S.country)h+=`<span class="chip lm" onclick="S.country='';sync()">🌐 ${esc(I2N[S.country]||S.country)} ✕</span>`;
- if(S.artist)h+=`<span class="chip or" onclick="S.artist='';sync()">👤 ${esc(S.artist)} ✕</span>`;
+ for(const d of DIMS){const set=SEL[d];if(!set.size)continue;
+  const vals=[...set],txt=vals.length===1?selLabelFor(d,vals[0]):vals.length+' selected';
+  const cls=MODE[d]==='out'?'mg':DIMCLS[d];
+  h+=`<span class="chip ${cls}" onclick="clearDim('${d}')" title="${esc(vals.map(v=>selLabelFor(d,v)).join(', '))}">`
+   +`${DIMICON[d]} ${MODE[d]==='out'?'NOT ':''}${esc(txt)} ✕</span>`;}
  if(S.matchSet)h+=`<span class="chip lm" onclick="S.matchSet=null;sync()">⚡ current sound ✕</span>`;
  document.getElementById('chips').innerHTML=h;}
-function sync(){document.getElementById('selGenre').value=S.genre;document.getElementById('selStyle').value=S.style;document.getElementById('selLabel').value=S.label;
- document.getElementById('selCty').value=S.country;document.getElementById('selArtist').value=S.artist;chips();render();}
+window.clearDim=d=>{SEL[d].clear();MODE[d]='in';sync();};
+function sync(){DIMS.forEach(msRefresh);chips();render();}
 window.clickTrendKey=k=>{if(k==='Other')return;
- if(S.trMode==='g')S.genre=S.genre===k?'':k;
- else if(S.trMode==='s')S.style=S.style===k?'':k;
- else if(S.trMode==='l')S.label=S.label===k?'':k;
- else{const iso=D.N2I[k.toLowerCase()]||null;if(iso)S.country=S.country===iso?'':iso;}
- sync();};
-window.setStyle=k=>{S.style=S.style===k?'':k;sync();};
-window.setGenre=k=>{S.genre=S.genre===k?'':k;sync();};
-window.setLabel=k=>{S.label=S.label===k?'':k;sync();};
-window.setArtist=k=>{S.artist=S.artist===k?'':k;sync();};
-window.setCountryName=k=>{const iso=D.N2I[k.toLowerCase()];if(iso){S.country=S.country===iso?'':iso;sync();}};
+ const dim={g:'genre',s:'style',l:'label',c:'country'}[S.trMode];
+ if(dim==='country'){const iso=D.N2I[k.toLowerCase()];if(iso)toggleSel('country',iso);}
+ else toggleSel(dim,k);};
+function toggleSel(dim,val){const set=SEL[dim];set.has(val)?set.delete(val):set.add(val);sync();}
+window.setStyle=k=>toggleSel('style',k);
+window.setGenre=k=>toggleSel('genre',k);
+window.setLabel=k=>toggleSel('label',k);
+window.setArtist=k=>toggleSel('artist',k);
+window.setCountryName=k=>{const iso=D.N2I[k.toLowerCase()];if(iso)toggleSel('country',iso);};
 function render(){chips();
  const _F=filteredTracks();
  const cc=document.getElementById('cntChip');
@@ -388,7 +424,7 @@ function rOverview(){const F=filteredTracks();
  <div class="kpi"><div class="n">${esc((nowSt[0]||['—'])[0])}</div><div class="l">current top subgenre</div></div>
  </div>
  <div class="grid g31">
- <div class="card"><h3>Listening intensity <span class="sub">hours / month · amber trace = 7-mo moving avg${(S.style||S.label||S.country||S.artist||S.q)?' · era-cropped, unfiltered':''}</span></h3>${areaChart(ml.map(m=>MN[+m.slice(5,7)]+'-'+m.slice(2,4)),mv,250)}</div>
+ <div class="card"><h3>Listening intensity <span class="sub">hours / month · amber trace = 7-mo moving avg${(DIMS.some(d=>SEL[d].size)||S.q)?' · era-cropped, unfiltered':''}</span></h3>${areaChart(ml.map(m=>MN[+m.slice(5,7)]+'-'+m.slice(2,4)),mv,250)}</div>
  <div class="card"><h3>Top artists <span class="sub">by hours · click to filter</span></h3>${barList(topA.slice(0,14).map(([k,v])=>({k,v})),'','setArtist')}</div>
  </div>
  <div class="grid g2">
@@ -423,14 +459,15 @@ function rWorld(){const mat=matFor('c');
  const totals={};for(const[k,r]of Object.entries(mat)){totals[k]=Object.values(r).reduce((x,y)=>x+y,0);}
  const ranked=Object.entries(totals).sort((x,y)=>y[1]-x[1]);
  let sel='';
- if(S.country){const arts=Object.entries(D.A).filter(([a])=>{const m=metaOf(a);return m&&isoOf(m.c)===S.country&&artistPass(a,'c');})
+ const oneCty=(SEL.country.size===1&&MODE.country==='in')?[...SEL.country][0]:null;
+ if(oneCty){const arts=Object.entries(D.A).filter(([a])=>{const m=metaOf(a);return m&&isoOf(m.c)===oneCty;})
   .map(([a])=>[a,artistWinH(a)]).sort((x,y)=>y[1]-x[1]).slice(0,12);
-  const labs={};for(const t of D.T){const m=metaOf(t.a);if(!m||isoOf(m.c)!==S.country)continue;
-   if(!artistPass(t.a,'c'))continue;const k=labelOf(t);if(k)labs[k]=(labs[k]||0)+winHours(t);}
+  const labs={};for(const t of D.T){const m=metaOf(t.a);if(!m||isoOf(m.c)!==oneCty)continue;
+   if(!trackPassExcept(t,'country'))continue;const k=labelOf(t);if(k)labs[k]=(labs[k]||0)+winHours(t);}
   const topL=Object.entries(labs).sort((x,y)=>y[1]-x[1]).slice(0,10);
   sel=`<div class="grid g2" style="margin-top:14px">
-  <div class="card"><h3>Artists · ${esc(I2N[S.country]||S.country)}</h3>${barList(arts.map(([k,v])=>({k,v})),'or','setArtist')}</div>
-  <div class="card"><h3>Labels · ${esc(I2N[S.country]||S.country)}</h3>${barList(topL.map(([k,v])=>({k,v})),'mg','setLabel')}</div></div>`;}
+  <div class="card"><h3>Artists · ${esc(I2N[oneCty]||oneCty)}</h3>${barList(arts.map(([k,v])=>({k,v})),'or','setArtist')}</div>
+  <div class="card"><h3>Labels · ${esc(I2N[oneCty]||oneCty)}</h3>${barList(topL.map(([k,v])=>({k,v})),'mg','setLabel')}</div></div>`;}
  return `<div class="grid g31">
  <div class="card"><h3>Where your music comes from <span class="sub">verified artist origin (MusicBrainz) · drag to spin · scroll to zoom · click to filter</span></h3>
  <canvas id="globe" style="width:100%;display:block;cursor:grab"></canvas></div>
@@ -467,7 +504,7 @@ function paintMap(){const cv=document.getElementById('globe');if(!cv)return;
   for(const f of D.GEO.features){
    ctx.beginPath();path(f);
    ctx.fillStyle=f.id===hovered?'#eaffea':colOf(f.id);ctx.fill();
-   if(f.id===S.country){ctx.lineWidth=1.6;ctx.strokeStyle='#fff';ctx.stroke();}
+   if(SEL.country.has(f.id)){ctx.lineWidth=1.6;ctx.strokeStyle='#fff';ctx.stroke();}
    else{ctx.lineWidth=.5;ctx.strokeStyle='#000804';ctx.stroke();}}}
  function loop(){if(!document.getElementById('globe'))return;
   if(G.spin&&!dragging)G.rot[0]+=0.05;
@@ -488,7 +525,7 @@ function paintMap(){const cv=document.getElementById('globe');if(!cv)return;
     tip.innerHTML=`<b>${esc(f.properties.n)}</b><br>${h?fmtH(h)+' listened':'<span class=mut>no signal</span>'}`;}
    else tip.style.display='none';}};
  cv.onpointerup=e=>{dragging=false;cv.style.cursor='grab';spinLater(2500);
-  if(!moved){const f=hit(e);if(f&&totals[f.id]){S.country=S.country===f.id?'':f.id;tip.style.display='none';sync();return;}}};
+  if(!moved){const f=hit(e);if(f&&totals[f.id]){toggleSel('country',f.id);tip.style.display='none';return;}}};
  cv.onpointerleave=()=>{hovered=null;tip.style.display='none';};
  cv.onwheel=e=>{e.preventDefault();G.spin=false;spinLater(3000);
   G.k=Math.max(.8,Math.min(4.5,G.k*(e.deltaY<0?1.09:0.92)));};
@@ -599,8 +636,10 @@ function recReleases(){
  out.sort((a,b)=>(b.y||0)-(a.y||0));
  return out.slice(0,80);}
 function digCtx(){const p=[];
- if(S.artist)p.push(S.artist);if(S.genre)p.push(S.genre);if(S.style)p.push(S.style);
- if(S.label)p.push(S.label);if(S.country)p.push(I2N[S.country]||S.country);if(S.q)p.push('“'+S.q+'”');
+ for(const d of DIMS){const st=SEL[d];if(!st.size)continue;
+  const vals=[...st].map(v=>selLabelFor(d,v));
+  p.push((MODE[d]==='out'?'not ':'')+(vals.length>2?vals.length+' '+d+'s':vals.join(' / ')));}
+ if(S.q)p.push('“'+S.q+'”');
  if(S.y0!==2013||S.y1!==2026)p.push(S.y0+'–'+S.y1);
  return p.length?p.join(' · '):'your whole library';}
 function sUri(q){return 'spotify:search:'+encodeURIComponent(q);}
@@ -756,22 +795,66 @@ window.peek=(id)=>{
  const allH=Object.values(D.A).reduce((s,a)=>s+a.h,0);
  document.getElementById('hdrHours').textContent=Math.round(allH).toLocaleString();
  // populate filter selects
- const stC={},lbC={},ctC={},gC={};
- for(const t of D.T){tGenres(t).forEach(g=>gC[g]=(gC[g]||0)+t.h);
-  tStyles(t).forEach(x=>stC[x]=(stC[x]||0)+t.h);}
- for(const[a,info]of Object.entries(D.A)){const m=metaOf(a);if(!m)continue;
-  const iso=isoOf(m.c);if(iso)ctC[iso]=(ctC[iso]||0)+info.h;}
- for(const t of D.T){const k=labelOf(t);if(k)lbC[k]=(lbC[k]||0)+t.h;}
- const fill=(id,obj,fmt)=>{const el=document.getElementById(id);
-  Object.entries(obj).sort((a,b)=>(fmt?fmt(a[0]):a[0]).localeCompare(fmt?fmt(b[0]):b[0],undefined,{sensitivity:'base'})).forEach(([k,v])=>{
-   const o=document.createElement('option');o.value=k;o.textContent=fmt?fmt(k):k;el.appendChild(o);});};
- fill('selGenre',gC);fill('selStyle',stC);fill('selLabel',lbC);fill('selCty',ctC,k=>I2N[k]||k);
- const aC={};Object.keys(D.A).forEach(a=>aC[a]=1);fill('selArtist',aC);
- document.getElementById('selArtist').onchange=e=>{S.artist=e.target.value;sync();};
- document.getElementById('selGenre').onchange=e=>{S.genre=e.target.value;sync();};
- document.getElementById('selStyle').onchange=e=>{S.style=e.target.value;sync();};
- document.getElementById('selLabel').onchange=e=>{S.label=e.target.value;sync();};
- document.getElementById('selCty').onchange=e=>{S.country=e.target.value;sync();};
+ // ---- build the Excel-style multiselect filters ----
+ const opts={genre:{},style:{},label:{},artist:{},country:{}};
+ for(const t of D.T){
+  tGenres(t).forEach(g=>opts.genre[g]=(opts.genre[g]||0)+t.h);
+  tStyles(t).forEach(x=>opts.style[x]=(opts.style[x]||0)+t.h);
+  const l=labelOf(t);if(l)opts.label[l]=(opts.label[l]||0)+t.h;
+  opts.artist[t.a]=(opts.artist[t.a]||0)+t.h;
+  const c=countryOf(t.a);if(c)opts.country[c]=(opts.country[c]||0)+t.h;}
+ const OPTS={};DIMS.forEach(d=>{OPTS[d]=Object.entries(opts[d])
+   .sort((a,b)=>selLabelFor(d,a[0]).localeCompare(selLabelFor(d,b[0]),undefined,{sensitivity:'base'}));});
+ window.OPTS=OPTS;
+ const PLACE={genre:'genre',style:'subgenre',label:'label',artist:'artist',country:'country'};
+
+ window.msRefresh=d=>{
+  const btn=document.querySelector(`#ms_${d} .msBtn`);if(!btn)return;
+  const n=SEL[d].size;
+  btn.textContent=n===0?PLACE[d]+'…'
+    :(MODE[d]==='out'?'not ':'')+(n===1?selLabelFor(d,[...SEL[d]][0]):n+' '+PLACE[d]+'s');
+  btn.className='msBtn'+(n?(MODE[d]==='out'?' out':' on'):'');
+  const i=document.createElement('i');i.textContent='▾';btn.appendChild(i);};
+
+ window.msRender=d=>{
+  const q=(document.getElementById('msq_'+d)||{}).value||'';
+  const ql=q.toLowerCase();
+  const list=OPTS[d].filter(([v])=>selLabelFor(d,v).toLowerCase().includes(ql));
+  document.getElementById('mslist_'+d).innerHTML=list.slice(0,600).map(([v,h])=>
+   `<label class="msItem"><input type="checkbox" ${SEL[d].has(v)?'checked':''}
+     onchange="toggleSel('${jsq(d)}','${jsq(v)}')"><span class="n">${esc(selLabelFor(d,v))}</span>
+     <span class="h">${fmtH(h)}</span></label>`).join('')
+   ||'<div class="note" style="margin:4px">no matches</div>';};
+
+ window.msOpen=d=>{
+  document.querySelectorAll('.msPanel').forEach(p=>{if(p.id!=='mspanel_'+d)p.classList.remove('open');});
+  const p=document.getElementById('mspanel_'+d);p.classList.toggle('open');
+  if(p.classList.contains('open')){msRender(d);const f=document.getElementById('msq_'+d);f&&f.focus();}};
+ window.msMode=(d,m)=>{MODE[d]=m;sync();
+   document.getElementById('mspanel_'+d).classList.add('open');msRender(d);
+   document.querySelectorAll(`#mspanel_${d} .seg span`).forEach(el=>el.classList.toggle('on',el.dataset.m===m));};
+ window.msAll=d=>{const q=((document.getElementById('msq_'+d)||{}).value||'').toLowerCase();
+   OPTS[d].filter(([v])=>selLabelFor(d,v).toLowerCase().includes(q)).forEach(([v])=>SEL[d].add(v));
+   sync();document.getElementById('mspanel_'+d).classList.add('open');msRender(d);};
+ window.msNone=d=>{SEL[d].clear();sync();
+   document.getElementById('mspanel_'+d).classList.add('open');msRender(d);};
+
+ DIMS.forEach(d=>{
+  document.getElementById('ms_'+d).innerHTML=
+   `<button class="msBtn" onclick="msOpen('${d}')"></button>
+    <div class="msPanel" id="mspanel_${d}">
+      <input type="text" id="msq_${d}" placeholder="search ${PLACE[d]}…" oninput="msRender('${d}')">
+      <div class="msTools">
+        <button onclick="msAll('${d}')">all</button>
+        <button onclick="msNone('${d}')">none</button>
+        <span class="seg"><span data-m="in" class="on" onclick="msMode('${d}','in')">INCLUDE</span><span data-m="out" onclick="msMode('${d}','out')">EXCLUDE</span></span>
+      </div>
+      <div class="msList" id="mslist_${d}"></div>
+    </div>`;
+  msRefresh(d);});
+ document.addEventListener('click',e=>{
+   if(!e.target.closest('.msWrap'))document.querySelectorAll('.msPanel').forEach(p=>p.classList.remove('open'));});
+
  const y0=document.getElementById('selY0'),y1=document.getElementById('selY1');
  YRS.forEach(y=>{y0.add(new Option(y,y));y1.add(new Option(y,y));});
  y0.value='2013';y1.value='2026';
