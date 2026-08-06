@@ -16,16 +16,26 @@ base = json.load(open('listening_base.json'))
 out = json.load(open('rec_spotify_ids.json')) if os.path.exists('rec_spotify_ids.json') else {'artist': {}, 'album': {}}
 
 heard = {t['a'].lower() for t in base['tracks']}
-ac = collections.Counter()
-for peers in sim.values():
+hours = collections.Counter()
+for t in base['tracks']: hours[t['a']] += t['h']
+tot = sum(hours.values()) or 1
+# mirror the dashboard's own ranking: similarity weighted by how much the seed
+# is actually played, boosted by how many independent seeds agree
+sc, ns = collections.Counter(), collections.Counter()
+for seed, peers in sim.items():
+    w = hours.get(seed, 0) / tot
     for p in peers:
-        if p['n'].lower() not in heard: ac[p['n']] += p['m']
-artists = [a for a, _ in ac.most_common(ART_N)]
+        if p['n'].lower() in heard: continue
+        sc[p['n']] += p['m'] * w; ns[p['n']] += 1
+artists = sorted(sc, key=lambda k: -sc[k] * (ns[k] ** 0.5))[:ART_N]
 
 rc = collections.Counter()
 for bucket in recs.values():
     for rows in bucket.values():
-        for r in rows: rc[(r['a'], r['n'])] += 1 + (0.5 if (r.get('y') or 0) >= 2022 else 0)
+        for r in rows:
+            try: yr = int(r.get('y') or 0)          # Discogs returns year as a string
+            except (TypeError, ValueError): yr = 0
+            rc[(r['a'], r['n'])] += 1 + (0.5 if yr >= 2022 else 0)
 albums = [k for k, _ in rc.most_common(REL_N)]
 
 TOK = {'v': None, 'exp': 0}

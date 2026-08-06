@@ -592,7 +592,7 @@ function rExplorer(){const F=filteredTracks();
 // ---------- dig / recommendations ----------
 let HEARD=null, HEARD_TRK=null;
 function heardSets(){
- if(!HEARD){HEARD=new Set(Object.keys(D.A).map(x=>x.toLowerCase()));
+ if(!HEARD){HEARD=new Set(D.T.map(t=>t.a.toLowerCase()));   // every played artist, not just D.A's >=10min ones
   HEARD_TRK=new Set(D.T.map(t=>(t.a+'|'+t.n).toLowerCase().replace(/[^a-z0-9|]/g,'')));}
  return [HEARD,HEARD_TRK];}
 function seedArtists(){                       // what the current filter is "about"
