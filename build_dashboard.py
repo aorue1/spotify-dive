@@ -109,12 +109,28 @@ if RIDS['artist'] or RIDS['album']:
 if os.path.exists('deezer_meta.json'):
     dz = json.load(open('deezer_meta.json'))
     n_dz = 0
+    # Deezer's taxonomy is coarser and differently named than Discogs'. Map it
+    # onto the Discogs genre names so a fallback does not fragment the genre list
+    # (Dance/Electro are both Discogs' "Electronic"). Used ONLY when a track has
+    # no genre at all, and never for subgenres - Deezer has nothing that granular.
+    DZ2DISCOGS = {'Dance': 'Electronic', 'Electro': 'Electronic',
+                  'Reggae': 'Reggae', 'Rock': 'Rock', 'Pop': 'Pop', 'Jazz': 'Jazz',
+                  'Rap/Hip Hop': 'Hip Hop', 'R&B': 'Funk / Soul', 'Soul & Funk': 'Funk / Soul',
+                  'Blues': 'Blues', 'Classical': 'Classical', 'Latin Music': 'Latin',
+                  'Films/Games': 'Stage & Screen', 'Country': "Folk, World, & Country",
+                  'Alternative': 'Rock', 'Metal': 'Rock', 'Folk': "Folk, World, & Country"}
+    n_dzg = 0
     for t in base['tracks']:
-        if t.get('lb'): continue
         d = dz.get(t['a'] + '|' + (t.get('al') or ''))
-        if d and d.get('l'):
+        if not d: continue
+        if not t.get('lb') and d.get('l'):
             t['lb'] = d['l']; n_dz += 1
-    print(f'deezer labels on {n_dz} further tracks')
+        has_genre = t.get('rg') or t.get('rs') or (META.get(t['a'], {}).get('g') or META.get(t['a'], {}).get('s'))
+        if not has_genre and d.get('g'):
+            mapped = [DZ2DISCOGS.get(g) for g in d['g']]
+            mapped = [m for m in dict.fromkeys(mapped) if m]
+            if mapped: t['rg'] = mapped; n_dzg += 1
+    print(f'deezer labels on {n_dz} further tracks, genres on {n_dzg}')
 
 SIM = json.load(open('similar_artists.json')) if os.path.exists('similar_artists.json') else {}
 SIM = {k: v[:20] for k, v in SIM.items() if v}
