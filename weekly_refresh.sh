@@ -45,6 +45,7 @@ run "rebuild base dataset"     600  python3 build_data.py
 # 2. enrichment - each skips everything already cached
 run "discogs: new releases"    3600 python3 enrich_releases.py
 run "discogs: new artists"     1800 python3 enrich_v3.py
+run "deezer: labels discogs lacks" 2400 python3 enrich_deezer.py
 run "musicbrainz: origins"     1800 python3 enrich_mb.py
 run "musicbrainz: city->country" 1800 python3 enrich_mb2.py
 run "lastfm: similar artists"  900  python3 mine_lastfm.py
@@ -55,13 +56,11 @@ TOK=$(curl -s -X POST https://accounts.spotify.com/api/token \
   -H "Authorization: Basic $(printf "$SPOTIFY_ID:$SPOTIFY_SECRET" | base64)" \
   -d grant_type=client_credentials | python3 -c "import sys,json;print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null)
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOK" \
-  "https://api.spotify.com/v1/albums/7qg1D9nKMvb99jaRvW50re")
+  "https://api.spotify.com/v1/search?q=artist%3A%22Kolter%22&type=artist&limit=1")
 if [ "$CODE" = "200" ]; then
   run "spotify: suggestion ids"  1800 python3 resolve_recs.py
-  sleep 60
-  LABEL_LIMIT=5000 run "spotify: track labels" 5400 python3 enrich_labels.py
 else
-  say "spotify rate-limited (probe=$CODE) - skipping its two jobs this week"
+  say "spotify search rate-limited (probe=$CODE) - suggestion ids skipped this week"
 fi
 
 # 4. render + persist
