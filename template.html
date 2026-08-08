@@ -313,20 +313,24 @@ function icWire(){const w=document.getElementById('icWrap');if(!w)return;
  w.onmouseleave=()=>{tip.style.display='none';cur.setAttribute('opacity','0');};}
 function stackedArea(mat){
  const yrs=YRS.filter(y=>+y>=S.y0&&+y<=S.y1);if(yrs.length<2)return'<div class="mut">widen the era range</div>';
- const tot={},keys=Object.entries(mat).map(([k,r])=>[k,yrs.reduce((s,y)=>s+(r[y]||0),0)]).sort((a,b)=>b[1]-a[1]);
+ const tot={};
+ const all=Object.entries(mat).map(([k,r])=>[k,yrs.reduce((s,y)=>s+(r[y]||0),0)]).sort((a,b)=>b[1]-a[1]);
+ const keys=all.filter(([k])=>k!=='(untagged)');
  const top=keys.slice(0,9).map(k=>k[0]);
  const rows=top.map(k=>({k,v:yrs.map(y=>mat[k][y]||0)}));
  const other=yrs.map((y,i)=>keys.slice(9).reduce((s,[k])=>s+(mat[k][y]||0),0));
  if(keys.length>9)rows.push({k:'Other',v:other});
+ if(mat['(untagged)'])rows.push({k:'(untagged)',v:yrs.map(y=>mat['(untagged)'][y]||0)});
  yrs.forEach((y,i)=>tot[i]=rows.reduce((s,r)=>s+r.v[i],0));
  const W=940,H=290,px=i=>i/(yrs.length-1)*(W-60)+34,py=v=>H-26-v*(H-50);
  let cum=yrs.map(()=>0),svg='',lg='';
- rows.forEach((r,ri)=>{const col=r.k==='Other'?'#123021':PAL[ri%PAL.length];
+ rows.forEach((r,ri)=>{const col=r.k==='(untagged)'?'#1d2b22':r.k==='Other'?'#4a6b57':PAL[ri%PAL.length];
   const lo=cum.slice();cum=cum.map((c,i)=>c+(S.trAbs?r.v[i]/Math.max(1,Math.max(...yrs.map((_,j)=>tot[j]))):(tot[i]?r.v[i]/tot[i]:0)));
   let up=cum.map((c,i)=>px(i)+','+py(c)).join(' ');
   let dn=lo.map((c,i)=>px(i)+','+py(c)).reverse().join(' ');
   svg+=`<polygon points="${up} ${dn}" fill="${col}" fill-opacity=".78" stroke="#05070c" stroke-width=".5"><title>${esc(r.k)}</title></polygon>`;
-  lg+=`<span class="lgi" onclick="clickTrendKey('${jsq(r.k)}')"><i style="background:${col}"></i>${esc(r.k)}</span>`;});
+  const clickable=r.k!=='Other'&&r.k!=='(untagged)';
+  lg+=`<span class="lgi"${clickable?` onclick="clickTrendKey('${jsq(r.k)}')"`:' style="cursor:default;opacity:.75"'}><i style="background:${col}"></i>${esc(r.k)}</span>`;});
  let ax=yrs.map((y,i)=>`<text x="${px(i)}" y="${H-8}" fill="#2f5c3d" font-size="10" text-anchor="middle">${y.slice(2)}</text>`).join('');
  let yax=S.trAbs?'':'<text x="6" y="18" fill="#2f5c3d" font-size="9">100%</text><text x="12" y="'+(H-28)+'" fill="#2f5c3d" font-size="9">0</text>';
  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%">${svg}${ax}${yax}</svg><div class="legend">${lg}</div>`;}
@@ -344,7 +348,8 @@ function matFor(kind){const m={};
  if(kind==='g'||kind==='s'){
   for(const t of D.T){
    if(!trackPassExcept(t,KIND2DIM[kind]))continue;
-   const keys=kind==='g'?tGenres(t):tStyles(t);if(!keys.length)continue;
+   let keys=kind==='g'?tGenres(t):tStyles(t);
+   if(!keys.length)keys=['(untagged)'];   // otherwise these hours vanish from the chart
    for(const k of keys){const row=m[k]??={};
     for(const[y,p]of Object.entries(t.y)){if(+y>=S.y0&&+y<=S.y1)row[y]=(row[y]||0)+t.h*p/t.p/keys.length;}}}
   return m;}
@@ -386,7 +391,7 @@ function chips(){let h='';
  document.getElementById('chips').innerHTML=h;}
 window.clearDim=d=>{SEL[d].clear();MODE[d]='in';sync();};
 function sync(){DIMS.forEach(msRefresh);chips();render();}
-window.clickTrendKey=k=>{if(k==='Other')return;
+window.clickTrendKey=k=>{if(k==='Other'||k==='(untagged)')return;
  const dim={g:'genre',s:'style',l:'label',c:'country'}[S.trMode];
  if(dim==='country'){const iso=D.N2I[k.toLowerCase()];if(iso)toggleSel('country',iso);}
  else toggleSel(dim,k);};
@@ -444,7 +449,7 @@ function rTrends(){const mat=matFor(S.trMode);
  <span class="seg"><span class="${S.trMode==='g'?'on':''}" onclick="S.trMode='g';render()">GENRES</span><span class="${S.trMode==='s'?'on':''}" onclick="S.trMode='s';render()">SUBGENRES</span><span class="${S.trMode==='l'?'on':''}" onclick="S.trMode='l';render()">LABELS</span><span class="${S.trMode==='c'?'on':''}" onclick="S.trMode='c';render()">COUNTRIES</span></span>
  <span class="seg"><span class="${!S.trAbs?'on':''}" onclick="S.trAbs=false;render()">SHARE %</span><span class="${S.trAbs?'on':''}" onclick="S.trAbs=true;render()">HOURS</span></span>
  </div>
- <div class="card"><h3>${kindName} through time <span class="sub">stacked ${S.trAbs?'hours':'share of listening'} per year · click legend to filter · Discogs-sourced</span></h3>${stackedArea(mat)}</div>
+ <div class="card"><h3>${kindName} through time <span class="sub">stacked ${S.trAbs?'hours':'share of listening'} per year · click legend to filter · every column is 100% of that year's listening</span></h3>${stackedArea(mat)}</div>
  <div class="card" style="margin-top:14px"><h3>Rising ↑ / Fading ↓ <span class="sub">then:
  <select onchange="S.thenA=+this.value;render()">${yopts('ta',S.thenA)}</select>–<select onchange="S.thenB=+this.value;render()">${yopts('tb',S.thenB)}</select>
  &nbsp;vs now: <select onchange="S.nowA=+this.value;render()">${yopts('na',S.nowA)}</select>–<select onchange="S.nowB=+this.value;render()">${yopts('nb',S.nowB)}</select></span></h3>
