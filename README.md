@@ -176,6 +176,26 @@ Data from [Discogs](https://www.discogs.com/developers),
 [Last.fm](https://www.last.fm/api) and [LRCLIB](https://lrclib.net).
 Globe geometry from [Natural Earth](https://www.naturalearthdata.com/).
 
+## Keeping it up to date automatically (optional)
+
+```
+./install_agents.sh
+```
+
+Installs two background jobs under your own user account:
+
+| Job | When | What it does |
+|---|---|---|
+| poll | every 4 hours | grabs new plays before Spotify's 50-play window drops them |
+| weekly | Sunday 23:00 | pulls scrobbles, enriches new music, rebuilds the page |
+
+They run whether or not your terminal is open. Remove them any time with
+`launchctl unload ~/Library/LaunchAgents/com.<you>.spotifydive.*.plist`.
+
+Nothing is committed or pushed unless you set `AUTO_PUSH=1` — and only do that
+against a **private** repo, since the built HTML embeds your whole listening
+history.
+
 ## Keeping it running (things that only show up in practice)
 
 **Plug the laptop in.** macOS defers scheduled jobs when you're on battery with

@@ -2,7 +2,7 @@
 # Resolve DIG suggestion IDs. Self-gating and idempotent: skips anything already
 # cached, aborts cleanly if /v1/search is rate-limited, and becomes a ~1s no-op
 # once every suggestion has an ID. Safe to run daily forever.
-cd ~/Documents/"Spotify Dive" || exit 1
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
 source .env
 say(){ echo "$(date '+%F %H:%M')  $*" >> resolve_daily.log; }
 pgrep -f resolve_recs.py >/dev/null && { say "already running - skip"; exit 0; }
@@ -18,6 +18,8 @@ A=$(python3 -c "import json,os;d=json.load(open('rec_spotify_ids.json')) if os.p
 say "ids $B -> $A"
 if [ "$A" -gt "$B" ]; then
   python3 build_dashboard.py >/dev/null 2>&1
-  git add -A >/dev/null 2>&1
-  git -c user.name="aorue1" commit -q -m "DIG suggestion IDs: $B -> $A" >/dev/null 2>&1 && git push -q >/dev/null 2>&1 && say "rebuilt + pushed"
+  if [ "${AUTO_PUSH:-0}" = "1" ]; then
+    git add -A >/dev/null 2>&1
+  git commit -q -m "DIG suggestion IDs: $B -> $A" >/dev/null 2>&1 && git push -q >/dev/null 2>&1 && say "rebuilt + pushed"
+  fi
 fi

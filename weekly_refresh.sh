@@ -3,7 +3,7 @@
 # each crawler only touches entities it has never seen, so a normal week is a
 # couple of minutes of API work, not a rebuild.
 # Jobs run STRICTLY SEQUENTIALLY - concurrent crawlers are what got us banned.
-cd ~/Documents/"Spotify Dive" || exit 1
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
 source .env
 LOG=refresh.log
 say(){ echo "$(date '+%F %H:%M')  $*" >> "$LOG"; }
@@ -67,11 +67,14 @@ fi
 
 # 4. render + persist
 run "rebuild dashboard"        300  python3 build_dashboard.py
-if ! git diff --quiet; then
+# Committing/pushing is opt-in: your listening history is personal, and this
+# would otherwise publish it to whatever remote the clone points at.
+# Enable with AUTO_PUSH=1 in .env, ideally against a PRIVATE repo of your own.
+if [ "${AUTO_PUSH:-0}" = "1" ] && ! git diff --quiet; then
   git add -A >/dev/null 2>&1
-  git -c user.name="aorue1" commit -q -m "weekly refresh $(date '+%F')" >/dev/null 2>&1 \
+  git commit -q -m "weekly refresh $(date '+%F')" >/dev/null 2>&1 \
     && git push -q >/dev/null 2>&1 && say "committed + pushed"
 else
-  say "nothing changed"
+  say "rebuilt (AUTO_PUSH off, nothing published)"
 fi
 say "=== weekly refresh done ==="

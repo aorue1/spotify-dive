@@ -15,6 +15,17 @@ import json, glob, collections, os
 
 SRC = os.path.expanduser('~/Downloads/spotify_export/Spotify Extended Streaming History/Streaming_History_Audio_*.json')
 
+# Shared-device exclusion. OFF unless you configure it.
+# The original author's account lived on a shared iPhone until 2024, so that
+# listening belonged to someone else and had to go. Yours almost certainly does
+# NOT need this - leaving it on would silently delete your own phone listening.
+# Turn it on only if you spot a cluster of out-of-character artists confined to
+# one platform in one era, via .env:
+#     EXCLUDE_PLATFORM=ios          # substring matched against the platform field
+#     EXCLUDE_PLATFORM_BEFORE=2024  # drop those plays before this year
+EXCL_PLAT = (os.environ.get('EXCLUDE_PLATFORM') or '').strip().lower()
+EXCL_YEAR = int(os.environ.get('EXCLUDE_PLATFORM_BEFORE') or 0)
+
 def is_ios(p):
     """Platform string looks like an iPhone/iPad.
 
@@ -50,13 +61,16 @@ if os.path.exists(INC):
     print(f'merged {n_inc} incremental plays from poller')
 
 kept = []
+n_excl = 0
 for r in recs:
     if not r.get('master_metadata_track_name'): continue
     yr = int(r['ts'][:4])
-    if is_ios(r['platform']) and yr < 2024: continue   # permanent exclusion
+    if EXCL_PLAT and EXCL_YEAR and yr < EXCL_YEAR and EXCL_PLAT in (r.get('platform') or '').lower():
+        n_excl += 1; continue
     kept.append(r)
 
-print(f'plays kept: {len(kept):,}')
+print(f'plays kept: {len(kept):,}'
+      + (f'  ({n_excl:,} excluded: platform "{EXCL_PLAT}" before {EXCL_YEAR})' if n_excl else ''))
 
 # track-level aggregate: uri -> stats + per-year plays
 tracks = {}

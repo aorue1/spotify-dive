@@ -61,6 +61,19 @@ double-click.
      a less frequent poll silently loses listens)
    - `weekly_refresh.sh` via launchd for a weekly rebuild
 
+## Setting it up for THIS person (not the original author)
+
+- **Do not enable the shared-device exclusion by default.** `build_data.py` can
+  drop plays from one platform before a given year (`EXCLUDE_PLATFORM`,
+  `EXCLUDE_PLATFORM_BEFORE`). The original author needed it — a shared iPhone —
+  but for most people it would silently delete their own phone listening. Leave
+  it blank unless you actually find a cluster of out-of-character artists
+  confined to one platform in one era, and show them the evidence first.
+- **Leave `AUTO_PUSH=0`** unless they have their own private repo. The built
+  HTML embeds their entire listening history.
+- **Use `./install_agents.sh`** for the background jobs; it derives paths and the
+  label from their machine. Never hand-write plists with someone else's paths.
+
 ## Things that will bite you
 - **`ms_played` is the truth, not play counts.** Hours listened is the honest
   metric; a skipped track still counts as a "play".
