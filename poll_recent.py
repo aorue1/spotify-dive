@@ -46,3 +46,10 @@ with open('plays_incremental.jsonl', 'a') as f:
         }) + '\n')
         new += 1
 print(f"{time.strftime('%F %H:%M')}  +{new} new plays (total window {len(items)})")
+# Last.fm has unlimited history and scrobbles from the phone too, so it closes
+# gaps the 50-play Spotify window cannot (see the 2026-08-09 dead-battery hole)
+try:
+    import subprocess
+    subprocess.run(['python3', os.path.join(HERE, 'ingest_lastfm.py')], timeout=300)
+except Exception as e:
+    print(f'  lastfm ingest skipped: {e}')

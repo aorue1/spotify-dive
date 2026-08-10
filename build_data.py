@@ -36,8 +36,27 @@ tracks = {}
 art_ms = collections.Counter()
 art_year_ms = collections.defaultdict(collections.Counter)   # artist -> year -> ms
 month_ms = collections.Counter()                              # 'YYYY-MM' -> ms
+# Last.fm scrobbles carry no Spotify id, so key them to the same track by
+# name+artist where we already know it, else to a stable synthetic key. Without
+# this a single scrobble would crash the build on uri.split(':').
+name_key = {}
 for r in kept:
-    uri = r['spotify_track_uri']; yr = r['ts'][:4]
+    if r.get('spotify_track_uri'):
+        k = ((r.get('master_metadata_track_name') or '').lower().strip(),
+             (r.get('master_metadata_album_artist_name') or '').lower().strip())
+        name_key.setdefault(k, r['spotify_track_uri'])
+
+n_lfm = 0
+for r in kept:
+    uri = r.get('spotify_track_uri')
+    if not uri:
+        k = ((r.get('master_metadata_track_name') or '').lower().strip(),
+             (r.get('master_metadata_album_artist_name') or '').lower().strip())
+        uri = name_key.get(k) or ('lfm:' + k[1] + '|' + k[0])
+        n_lfm += 1
+    if r.get('ms_played') is None:   # Last.fm gives no duration; assume a full listen
+        r['ms_played'] = 210000
+    yr = r['ts'][:4]
     a = r['master_metadata_album_artist_name']
     t = tracks.setdefault(uri, {'n': r['master_metadata_track_name'], 'a': a,
                                 'al': r['master_metadata_album_album_name'],
@@ -54,10 +73,11 @@ for r in kept:
 tl = []
 for uri, t in tracks.items():
     if t['p'] < 2 and t['ms'] < 240000: continue
-    tl.append({'id': uri.split(':')[-1], 'n': t['n'], 'a': t['a'], 'al': t['al'],
+    tl.append({'id': (uri.split(':')[-1] if not uri.startswith('lfm:') else uri), 'n': t['n'], 'a': t['a'], 'al': t['al'],
                'p': t['p'], 'h': round(t['ms']/3600000, 2), 'sk': t['sk'],
                'f': t['f'][:7], 'l': t['l'][:7], 'y': dict(t['y'])})
 tl.sort(key=lambda x: -x['h'])
+if n_lfm: print(f'  ({n_lfm} of them Last.fm scrobbles with no Spotify id)')
 print(f'tracks kept (>=2 plays or >=4min): {len(tl):,} of {len(tracks):,}')
 
 # artist aggregates (only artists appearing in kept tracks or with >=10min)

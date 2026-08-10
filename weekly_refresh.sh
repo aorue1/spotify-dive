@@ -24,13 +24,14 @@ done
 run(){
   local label="$1" secs="$2"; shift 2
   say "→ $label"
+  local t0=$SECONDS
   "$@" >/dev/null 2>&1 &
   local pid=$!
   ( sleep "$secs"; kill -0 "$pid" 2>/dev/null && { kill -TERM "$pid" 2>/dev/null; sleep 5; kill -9 "$pid" 2>/dev/null; } ) &
   local wd=$!
   wait "$pid" 2>/dev/null; local rc=$?
   kill "$wd" 2>/dev/null
-  [ "$rc" -ne 0 ] && say "   (exit $rc after $(( SECONDS )) s)"
+  [ "$rc" -ne 0 ] && say "   (exit $rc after $(( SECONDS - t0 ))s of this job)"
   return 0
 }
 
@@ -38,6 +39,7 @@ say "=== weekly refresh start ==="
 
 # 0. capture anything the 4-hourly poller has not yet grabbed
 run "poll recent plays"        300  python3 poll_recent.py
+run "lastfm scrobbles"         600  python3 ingest_lastfm.py
 
 # 1. rebuild the base dataset (merges plays_incremental.jsonl, dedups by ts)
 run "rebuild base dataset"     600  python3 build_data.py
