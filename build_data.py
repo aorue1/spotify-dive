@@ -1,8 +1,35 @@
+"""Parse the Spotify export (+ any incremental plays) into listening_base.json.
+
+This is the only place raw listening data is interpreted, so the judgement calls
+live here:
+
+* Hours, not play counts. `ms_played` is the honest metric - a skipped track
+  still counts as a play, so ranking by plays flatters music you skip.
+* Tracks are kept only at >=2 plays OR >=4 minutes listened. Below that it is
+  almost always a skip or a mis-tap, and keeping them buries real listening.
+* Shared-device listening is excluded (see is_ios below).
+
+Output feeds build_dashboard.py, which never re-interprets play data.
+"""
 import json, glob, collections, os
 
 SRC = os.path.expanduser('~/Downloads/spotify_export/Spotify Extended Streaming History/Streaming_History_Audio_*.json')
 
 def is_ios(p):
+    """Platform string looks like an iPhone/iPad.
+
+    Used to drop pre-2024 iOS plays entirely. This account was used on a shared
+    iPhone until 2024, and that listening is somebody else's: it put Sade, Debi
+    Nova and Melody Gardot at the top of the "top artists" chart with ~1,900
+    plays in 2016 alone, on a platform that produced almost nothing before or
+    after. It is 40% of all plays in the export and it distorted every chart.
+
+    The rule is deliberately blunt and has no UI toggle - this is not the user's
+    listening, so it should never be mixed back in. If you fork this for your own
+    data, DELETE this rule rather than copying it; the giveaway for your own
+    version is a cluster of out-of-character artists confined to one platform in
+    one era.
+    """
     p = (p or '').lower()
     return ('ios' in p) or ('iphone' in p) or ('ipad' in p)
 

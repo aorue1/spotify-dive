@@ -45,22 +45,53 @@ you through all of it. Otherwise, follow along:
 
 While you wait, do step 2.
 
-### 2. Get free API keys (10 minutes, all free, no approval)
+### 2. Get free API keys (~10 minutes, all free, none need approval)
 
-Copy `.env.example` to `.env` and fill in what you can:
+These are optional. **Skip them entirely and you still get a full dashboard** of
+what you listened to and when — you just won't get genres, record labels, artist
+origins or recommendations.
 
-| Key | Where | What it adds |
-|---|---|---|
-| `DISCOGS_TOKEN` | [discogs.com/settings/developers](https://www.discogs.com/settings/developers) | subgenres + record labels |
-| `LASTFM_KEY` | [last.fm/api/account/create](https://www.last.fm/api/account/create) | "artists you've never played" |
-| `SPOTIFY_ID` / `SPOTIFY_SECRET` | [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) | players in the Dig tab, live updates |
-| `CONTACT_EMAIL` | your email | MusicBrainz politely asks who's calling |
+Copy `.env.example` to `.env` (a plain text file) and paste each key in as you go.
 
-For the Spotify one: create an app, tick **Web API**, and set the redirect URI to
-`http://127.0.0.1:8888/callback` (it rejects the word `localhost`).
+#### Discogs — adds subgenres and record labels
+1. Go to [discogs.com/settings/developers](https://www.discogs.com/settings/developers) (sign in / make a free account).
+2. Click **Generate new token**.
+3. Copy the long string it shows you into `DISCOGS_TOKEN=` in your `.env`.
 
-**None of these are required.** Skip them all and you still get a full dashboard
-of your listening — you just won't get genres, labels or recommendations.
+#### Last.fm — adds "artists you've never played" recommendations
+1. Go to [last.fm/api/account/create](https://www.last.fm/api/account/create).
+2. Fill in any name and description — "Spotify Dive", "personal dashboard" is fine.
+   Leave the callback URL blank.
+3. Copy **API key** into `LASTFM_KEY=`.
+4. If you scrobble, also put your Last.fm username in `LASTFM_USER=`.
+   Worth doing: scrobbling records plays from your phone too, so nothing is lost
+   when your laptop is asleep or flat.
+
+#### Spotify — adds playable previews in the Dig tab, and live updates
+This one is the fiddliest, because Spotify's page is built for developers. It is
+still just a form. Step by step:
+
+1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+   and log in with your normal Spotify account.
+2. Click **Create app**.
+3. Fill the form in:
+   - **App name** — anything, e.g. `Spotify Dive`
+   - **App description** — anything, e.g. `personal listening dashboard`
+   - **Redirect URI** — type `http://127.0.0.1:8888/callback` then click **Add**.
+     It must be that exactly. Spotify rejects the word `localhost`, and it will
+     not let you save until you have clicked Add.
+   - **Which API/SDKs are you planning to use?** — tick **Web API** only.
+4. Accept the terms and click **Save**.
+5. You now land on the app's page. Click **Settings** (top right).
+6. Copy **Client ID** into `SPOTIFY_ID=`.
+7. Click **View client secret**, and copy that into `SPOTIFY_SECRET=`.
+
+Treat the client secret like a password — it goes in `.env`, which is already
+listed in `.gitignore` so it never reaches GitHub.
+
+#### Your email
+Put your own address in `CONTACT_EMAIL=`. MusicBrainz asks callers to identify
+themselves; it is never shown anywhere or sent to anyone else.
 
 ### 3. Unzip the export
 
@@ -144,3 +175,23 @@ Data from [Discogs](https://www.discogs.com/developers),
 [Deezer](https://developers.deezer.com/api),
 [Last.fm](https://www.last.fm/api) and [LRCLIB](https://lrclib.net).
 Globe geometry from [Natural Earth](https://www.naturalearthdata.com/).
+
+## Keeping it running (things that only show up in practice)
+
+**Plug the laptop in.** macOS defers scheduled jobs when you're on battery with
+the lid closed, and stops entirely if it goes flat. A dead battery here opened a
+26-hour hole in collection. Lid open or closed doesn't matter — power does.
+
+**Turn on Last.fm scrobbling if you can.** Spotify's API only exposes your last
+50 plays, so any gap longer than your listening rate loses data permanently and
+silently. Last.fm keeps unlimited history and scrobbles from your phone, so it
+survives the laptop being asleep, flat, or shut. With it connected, a missed
+refresh costs you nothing — the data waits and gets backfilled.
+
+**Re-request the export occasionally.** It is only current up to the day it was
+generated, and takes up to 30 days to arrive. `build_data.py` merges and
+de-duplicates by timestamp, so dropping a newer export in is always safe.
+
+**Never run two crawlers at once.** Rate limits are per endpoint and unforgiving —
+running three in parallel earned a 23-hour ban during development. The scripts
+are all resumable, so one at a time costs nothing but patience.

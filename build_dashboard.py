@@ -1,3 +1,22 @@
+"""Render listening_base.json + all enrichment caches into one self-contained
+Spotify Dive.html (data, d3-geo and the globe geometry are all inlined, so the
+file works from file:// with no server).
+
+Precedence rules encoded here, in order, each learned the hard way:
+
+* LABEL   Discogs release imprint > Deezer > Spotify P-line. Discogs names the
+          label on the record; the P-line often names the parent ("Elektra
+          Entertainment Group" vs "Elektra") and is sometimes prose, not a label.
+* GENRE   The release's own tags first, then the artist profile, then a coarse
+          Deezer genre mapped onto Discogs' taxonomy. Genre belongs to a record,
+          not a person - one artist's releases genuinely differ.
+* ORIGIN  MusicBrainz only. Discogs "country" is the pressing country, which put
+          The Doors in Russia; unverified artists get no country at all.
+* Artists that could not be verified against a known release carry NO genre
+          rather than a guessed one (see enrich_v3.py).
+
+Cheap and idempotent: ~0.2s, zero API calls. Re-run it freely.
+"""
 import json, re, os
 
 base = json.load(open('listening_base.json'))
